@@ -1,4 +1,5 @@
 run = "clj -X:dev :mode :single-run"
+entrypoint = "main.clj"
 
 [env]
 CLJ_CONFIG = "/home/runner/.clojure"
@@ -8,3 +9,6 @@ pattern = "**/*.clj"
 
 [languages.clojure.languageServer]
 start = ["clojure-lsp"]
+
+[nix]
+channel = "stable-22_11"

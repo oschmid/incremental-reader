@@ -1,18 +1,15 @@
 (ns user) ; Must be ".clj" file, Clojure doesn't auto-load user.cljc
 
 ; lazy load dev stuff - for faster REPL startup and cleaner dev classpath
-(def start-electric-server! (delay @(requiring-resolve 'hyperfiddle.electric-jetty-server/start-server!)))
+(def start-electric-server! (delay @(requiring-resolve 'electric-server-java8-jetty9/start-server!)))
 (def shadow-start! (delay @(requiring-resolve 'shadow.cljs.devtools.server/start!)))
 (def shadow-watch (delay @(requiring-resolve 'shadow.cljs.devtools.api/watch)))
-
-(def electric-server-config
-  {:host "0.0.0.0", :port 8080, :resources-path "resources/public"})
 
 (defn main [& args]
   (println "Starting Electric compiler and server...")
   (@shadow-start!) ; serves index.html as well
   (@shadow-watch :dev) ; depends on shadow server
-  (def server (@start-electric-server! electric-server-config))
+  (def server (@start-electric-server! {:host "0.0.0.0"}))
   (comment (.stop server)))
 
 ; Userland Electric code is lazy loaded by the shadow build due to usage of

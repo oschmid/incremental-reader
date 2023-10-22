@@ -1,14 +1,14 @@
-# electric-starter-app
+# incremental-reader
 
+Mobile-first incremental reading webapp
+
+## TODO
+- Fix rendering of non-existent queue. (How to deal with no result?)
 ```
-$ clj -A:dev -X user/main
-
-Starting Electric compiler and server...
-shadow-cljs - server version: 2.20.1 running at http://localhost:9630
-shadow-cljs - nREPL server started on port 9001
-[:app] Configuring build.
-[:app] Compiling ...
-[:app] Build completed. (224 files, 0 compiled, 0 warnings, 1.93s)
-
-👉 App server available at http://0.0.0.0:8080
+  Don't know how to create ISeq from: clojure.lang.Var$Unbound
 ```
+
+## Done
+
+- Oct 9, 2023: Added tests. Run with `clj -X:test`
+- Oct 5, 2023: Ignoring [Repl Auth](https://docs.replit.com/hosting/authenticating-users-repl-auth#retrieving-information-from-the-authenticated-account) until [2.0](https://docs.replit.com/hosting/repl-auth-sidebar) comes out of Beta and I can put the entire site behind a login page.
