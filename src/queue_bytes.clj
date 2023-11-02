@@ -16,16 +16,12 @@
         low (.getLong bb)]
     (java.util.UUID. high low)))
 
-; TODO fix (concat-byte-arrays (uuid->bytes (java.util.UUID/randomUUID)) [])
-;; Execution error (IllegalArgumentException) at queue-bytes/concat-byte-arrays (queue_bytes.clj:26).
-;; No matching method put found taking 1 args for class java.nio.HeapByteBuffer
-
-;; https://stackoverflow.com/a/26670298
+;; https://stackoverflow.com/a/26670298 by Antti Karanta
 (defn concat-byte-arrays [& byte-arrays]
   (when (not-empty byte-arrays)
     (let [total-size (reduce + (map count byte-arrays))
-          result     (byte-array total-size)
-          bb         (java.nio.ByteBuffer/wrap result)]
+          result (byte-array total-size)
+          bb (java.nio.ByteBuffer/wrap result)]
       (doseq [ba byte-arrays]
         (.put bb ba))
       result)))
