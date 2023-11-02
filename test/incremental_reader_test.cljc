@@ -1,23 +1,29 @@
 (ns incremental-reader-test
   (:require [clojure.test :refer [deftest is testing]]
-            [incremental-reader :as ir]))
+            [datascript.core :as d]
+            [incremental-reader :as ir]
+            [queue-bytes :refer [uuid->bytes concat-byte-arrays]]))
 
-; keywords
-(def ir-body :incremental-reader/body)
-(def ir-extracts :incremental-reader/extracts)
-(def ir-queue :incremental-reader/queue)
-(def ir-source :incremental-reader/source)
+(def !empty-conn (d/create-conn ir/schema))
 
-; TODO use UUIDs
-(deftest add-extract-test
-  (testing "Exception is thrown if ID is not unique"
-    (is (thrown-with-msg? IllegalArgumentException #"ID must be unique"
-          (ir/add-extract 4 {ir-source "source.com" ir-body "Body"}
-            {ir-queue [4] ir-extracts {4 {ir-source "source.com" ir-body "Body"}}}))))
-  (testing "Extract is added to the head of the priority queue"
-    (is (= {ir-queue [123] ir-extracts {123 {ir-source "source.com" ir-body "Body"}}}
-           (ir/add-extract 123 {ir-source "source.com" ir-body "Body"} {})))
-    (is (= {ir-queue [2 1] ir-extracts {1 {ir-source "source1.com" ir-body "Body1"}
-                                        2 {ir-source "source2.com" ir-body "Body2"}}}
-           (ir/add-extract 2 {ir-source "source2.com" ir-body "Body2"}
-                           {ir-queue [1] ir-extracts {1 {ir-source "source1.com" ir-body "Body1"}}})))))
+(def !conn (d/create-conn ir/schema))
+(def uuid1 (java.util.UUID/randomUUID))
+(def uuid2 (java.util.UUID/randomUUID))
+(d/transact! !conn [[:db.fn/call ir/add-extract "testUserID"
+                     {:extract/uuid uuid1 :extract/source "https://one.com"}]])
+(d/transact! !conn [[:db.fn/call ir/add-extract "testUserID"
+                     {:extract/uuid uuid2 :extract/source "https://two.com"}]])
+
+(deftest queries
+  (testing "queue"
+    (is (= (seq (byte-array 0)) (seq (ir/queue @!empty-conn "unknownUserID"))))
+    (is (= (seq (concat-byte-arrays (uuid->bytes uuid2) (uuid->bytes uuid1)))
+           (seq (ir/queue @!conn "testUserID")))))
+  (testing "extract"
+    (is (= nil (ir/extract @!empty-conn (java.util.UUID/randomUUID))))
+    (is (= {:db/id 3 :extract/uuid uuid2 :extract/source "https://two.com"}
+           (ir/extract @!conn uuid2))))
+  (testing "first-extract"
+    (is (= nil (ir/first-extract @!empty-conn "unknownUserID")))
+    (is (= {:db/id 3 :extract/uuid uuid2 :extract/source "https://two.com"}
+           (ir/first-extract @!conn "testUserID")))))
