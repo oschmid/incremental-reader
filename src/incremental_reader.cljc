@@ -51,25 +51,28 @@
   (if (= s "") nil s))
 
 #?(:clj (defn map-queue [db userID f]
-          (prn "map-queue" db userID f)
           (let [{e :db/id q ::queue}
                 (ffirst (d/q '[:find (pull ?e [:db/id (::queue :default (byte-array 0))])
                                :in $ ?userID
                                :where [?e ::userID ?userID]] db userID))]
             (if (some? e)
-              [[:db/add e ::queue (apply f q)]]
-              [{::userID userID ::queue (apply f (byte-array 0))}]))))
+              [:db/add e ::queue (f q)]
+              {::userID userID ::queue (f (byte-array 0))}))))
 
 ; TODO spec :extract/uuid is required
 #?(:clj (defn add-extract [db userID extract] "Add extract to the head of the user's queue"
-          (let [uuid-bytes (uuid->bytes (:extract/uuid extract))
-                {e :db/id q ::queue} (ffirst (d/q '[:find (pull ?e [:db/id (::queue :default (byte-array 0))])
-                                                    :in $ ?userID
-                                                    :where [?e ::userID ?userID]] db userID))]
-            [extract
-             (if (some? e)
-               [:db/add e ::queue (concat-byte-arrays uuid-bytes q)]
-                {::userID userID ::queue uuid-bytes})])))
+          [(map-queue db userID #(concat-byte-arrays (uuid->bytes (:extract/uuid extract)) %))
+           extract]))
+
+; TODO
+;; #?(:clj (defn delete-extract [db userID uuid] "Delete extract at the head of a user's queue"
+;;           (let [firstUUID (:extract/uuid (first-extract db userID))]
+;;             (if-not (.equals firstUUID uuid)
+;;               (raise uuid " is not the first extract in the queue (actual is " firstUUID)
+;;               (let [e (ffirst (d/q '[:find ?e :in $ ?userID
+;;                                      :where [?e ::userID ?userID]] db userID))]
+;;                 [(map-queue db userID (partial drop-bytes 16))
+;;                  [:db.fn/retractEntity e]]))))
 
 (e/defn URL-Import-Field [userID] "Add a URL to the head of the user's queue."
   (dom/div
@@ -94,13 +97,16 @@
             (let [e (e/server (first-extract db userID))]
               (if (some? e)
                 (dom/div (dom/text (str "TODO display extract: " e)))
-                ; TODO if it has :extract/source - display iframe
+                ; TODO add 'Delete Extract' button to remove extract
                 ; TODO if it has :extract/content - display formatted text
+                ; TODO if it has :extract/source - add button to 'View Original' in a new tab (highlight extract text)
                 ; TODO save scroll position to resume next time
+                ; TODO add 'Read Last' button
+                ; TODO add 'Read Soon' button
                 ; TODO add 'Extract' button 
                 ;      create with :extract/content and :extract/parent and :extract/original IDs
                 ;      should insert after current extract
-                ; TODO add 'Delete' button to remove unnecessary text/html
+                ; TODO add 'Delete Text' button to remove unnecessary text/html
                 ; TODO enable when the current extract has selected text (https://developer.mozilla.org/en-US/docs/Web/API/Document/selectionchange_event)
                 ; TODO get [iframe selected text](https://stackoverflow.com/questions/1471759/how-to-get-selected-text-from-iframe-with-javascript)
                 (dom/div (dom/text "Welcome!")))
