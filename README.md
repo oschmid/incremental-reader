@@ -3,7 +3,6 @@
 Mobile-first incremental reading webapp
 
 ## TODO
-- Search for "TODO_" for next item. (There should only be one.)
 - Connect to https://github.com/oschmid/incremental-reader
 
 ## Notes

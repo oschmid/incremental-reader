@@ -6,7 +6,7 @@
   
   (:import [hyperfiddle.electric Pending])
   (:require #?(:clj [datascript.core :as d]) ; database on server
-            #?(:clj [queue-bytes :refer [bytes->uuid uuid->bytes concat-byte-arrays]])
+            #?(:clj [queue-bytes :as q :refer [bytes->uuid uuid->bytes concat-byte-arrays]])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]))
@@ -64,15 +64,15 @@
           [(map-queue db userID #(concat-byte-arrays (uuid->bytes (:extract/uuid extract)) %))
            extract]))
 
-; TODO
-;; #?(:clj (defn delete-extract [db userID uuid] "Delete extract at the head of a user's queue"
-;;           (let [firstUUID (:extract/uuid (first-extract db userID))]
-;;             (if-not (.equals firstUUID uuid)
-;;               (raise uuid " is not the first extract in the queue (actual is " firstUUID)
-;;               (let [e (ffirst (d/q '[:find ?e :in $ ?userID
-;;                                      :where [?e ::userID ?userID]] db userID))]
-;;                 [(map-queue db userID (partial drop-bytes 16))
-;;                  [:db.fn/retractEntity e]]))))
+#?(:clj (defn delete-extract [db userID uuid] "Delete extract from a user's queue"
+          (if-let [e (ffirst (d/q '[:find ?e :in $ ?uuid
+                                    :where [?e :extract/uuid ?uuid]] db uuid))]
+            [(map-queue db userID #(if (= -1 (q/index-of % (uuid->bytes uuid)))
+                                     (throw (Exception. (str "Extract " uuid " isn't in the queue of user '" userID "'")))
+                                     (q/remove-uuid % uuid))) ; TODO optimize with a "copy-without i queue-bytes" function to skip double call to index-of
+             ; TODO how to test when type hints are needed?
+             [:db.fn/retractEntity e]]
+            [])))
 
 (e/defn URL-Import-Field [userID] "Add a URL to the head of the user's queue."
   (dom/div
@@ -86,18 +86,20 @@
                       (e/server
                        (e/discard
                         (d/transact! !conn [[:db.fn/call add-extract userID
-                                             {:extract/uuid (java.util.UUID/randomUUID) :extract/source v}]])
-                      (set! (.-value dom/node) ""))))))))))
+                                             {:extract/uuid (java.util.UUID/randomUUID) :extract/source v}]])))
+                      (set! (.-value dom/node) ""))))))))
 
 (e/defn Incremental-Reader []
         (e/client
           (dom/link (dom/props {:rel :stylesheet :href "/incremental-reader.css"}))
           (let [userID "oschmid1"] ; TODO get user ID from Repl Auth
             (URL-Import-Field. userID)
-            (let [e (e/server (first-extract db userID))]
-              (if (some? e)
-                (dom/div (dom/text (str "TODO display extract: " e)))
-                ; TODO add 'Delete Extract' button to remove extract
+            (if-let [e (e/server (first-extract db userID))]
+              (let [uuid (:extract/uuid e)]
+                (dom/div (dom/text (str "TODO display extract: " e))
+                         (dom/div
+                          (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID uuid]])))) (dom/text "Delete")))))
+                ; TODO add delete confirmation popup
                 ; TODO if it has :extract/content - display formatted text
                 ; TODO if it has :extract/source - add button to 'View Original' in a new tab (highlight extract text)
                 ; TODO save scroll position to resume next time
@@ -109,5 +111,4 @@
                 ; TODO add 'Delete Text' button to remove unnecessary text/html
                 ; TODO enable when the current extract has selected text (https://developer.mozilla.org/en-US/docs/Web/API/Document/selectionchange_event)
                 ; TODO get [iframe selected text](https://stackoverflow.com/questions/1471759/how-to-get-selected-text-from-iframe-with-javascript)
-                (dom/div (dom/text "Welcome!")))
-              ))))
+                (dom/div (dom/text "Welcome!"))))))
