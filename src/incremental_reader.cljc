@@ -6,7 +6,7 @@
   
   (:import [hyperfiddle.electric Pending])
   (:require #?(:clj [datascript.core :as d]) ; database on server
-            #?(:clj [queue-bytes :as q :refer [bytes->uuid uuid->bytes concat-byte-arrays]])
+            #?(:clj [queue-bytes :as q])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]))
@@ -45,7 +45,7 @@
 
 #?(:clj (defn first-extract [db userID]
           (let [q (queue db userID)]
-            (if (empty? q) nil (extract db (bytes->uuid q))))))
+            (if (empty? q) nil (extract db (q/bytes->uuid q))))))
 
 (defn empty->nil [s]
   (if (= s "") nil s))
@@ -61,16 +61,13 @@
 
 ; TODO spec :extract/uuid is required
 #?(:clj (defn add-extract [db userID extract] "Add extract to the head of the user's queue"
-          [(map-queue db userID #(concat-byte-arrays (uuid->bytes (:extract/uuid extract)) %))
+          [(map-queue db userID #(q/prepend-uuid % (:extract/uuid extract)))
            extract]))
 
 #?(:clj (defn delete-extract [db userID uuid] "Delete extract from a user's queue"
           (if-let [e (ffirst (d/q '[:find ?e :in $ ?uuid
                                     :where [?e :extract/uuid ?uuid]] db uuid))]
-            [(map-queue db userID #(if (= -1 (q/index-of % (uuid->bytes uuid)))
-                                     (throw (Exception. (str "Extract " uuid " isn't in the queue of user '" userID "'")))
-                                     (q/remove-uuid % uuid))) ; TODO optimize with a "copy-without i queue-bytes" function to skip double call to index-of
-             ; TODO how to test when type hints are needed?
+            [(map-queue db userID #(q/remove-uuid % uuid))
              [:db.fn/retractEntity e]]
             [])))
 

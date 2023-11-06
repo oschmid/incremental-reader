@@ -2,8 +2,7 @@
 
 Mobile-first incremental reading webapp
 
-## TODO
-- Connect to https://github.com/oschmid/incremental-reader
+- TODO connect to https://github.com/oschmid/incremental-reader
 
 ## Notes
 - Oct 29, 2023: Looks like custom [file extension icons](https://ask.replit.com/t/custom-file-icon/20905/2) [are on the roadmap](https://ask.replit.com/t/file-icons-extention/11574/2) (Would be nice for .cljc/.cljs)

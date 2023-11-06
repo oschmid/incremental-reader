@@ -4,39 +4,46 @@
 ;; 
 ;; UUIDs are 16 bytes
 
+(defn put-uuid [bb uuid]
+  (-> bb
+      (.putLong (.getLeastSignificantBits uuid))
+      (.putLong (.getMostSignificantBits uuid))))
+
 (defn uuid->bytes [uuid]
-  (let [bb (java.nio.ByteBuffer/wrap (byte-array 16))]
-    (.putLong bb (.getMostSignificantBits uuid))
-    (.putLong bb (.getLeastSignificantBits uuid))
-    (.array bb)))
+  (-> (byte-array 16)
+      (java.nio.ByteBuffer/wrap)
+      (put-uuid uuid)
+      (.array)))
 
 (defn bytes->uuid [bs]
   (let [bb (java.nio.ByteBuffer/wrap bs)
-        high (.getLong bb)
-        low (.getLong bb)]
+        low (.getLong bb)
+        high (.getLong bb)]
     (java.util.UUID. high low)))
 
-;; https://stackoverflow.com/a/26670298 by Antti Karanta
-(defn concat-byte-arrays [& byte-arrays]
-  (when (not-empty byte-arrays)
-    (let [total-size (reduce + (map count byte-arrays))
-          result (byte-array total-size)
-          bb (java.nio.ByteBuffer/wrap result)]
-      (doseq [ba byte-arrays]
-        (.put bb ba))
-      result)))
+(defn prepend-uuid [queue-bytes uuid]
+  (-> (byte-array (+ (count queue-bytes) 16))
+      (java.nio.ByteBuffer/wrap)
+      (put-uuid uuid)
+      (.put queue-bytes)
+      (.array)))
 
 ; TODO spec not nil
-(defn index-of [queue-bytes uuid-bytes]
+(defn index-of [queue-bytes uuid]
   (loop [i 0]
     (cond
       (>= i (count queue-bytes)) -1
-      (java.util.Arrays/equals queue-bytes i (+ i 16) uuid-bytes 0 16) i ; TODO optimize by comparing from last to first? First 6 or 7 bytes of each UUID will be the same...
+      (java.util.Arrays/equals queue-bytes i (+ i 16) (uuid->bytes uuid) 0 16) i ; TODO optimize by comparing from last to first? First 6 or 7 bytes of each UUID will be the same...
       :else (recur (+ i 16)))))
 
 (defn remove-uuid [queue-bytes uuid]
-  (let [i (index-of queue-bytes (uuid->bytes uuid))]
+  (let [i (index-of queue-bytes uuid)]
     (if (= i -1)
-      queue-bytes
-      (concat-byte-arrays (java.util.Arrays/copyOfRange queue-bytes 0 i)
-                          (java.util.Arrays/copyOfRange queue-bytes (+ i 16) (count queue-bytes))))))
+      (throw (Exception. (str "Extract '" uuid "' isn't in the queue")))
+      (-> (byte-array (- (count queue-bytes) 16))
+        (java.nio.ByteBuffer/wrap)
+        (.put queue-bytes 0 i)
+        (.put queue-bytes (+ i 16) (- (count queue-bytes) i 16))
+        (.array)))))
+
+; TODO how to test when type hints are needed?

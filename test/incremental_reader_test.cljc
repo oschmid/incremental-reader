@@ -1,9 +1,8 @@
 (ns incremental-reader-test
   (:require [clojure.test :refer [deftest is testing]]
             [datascript.core :as d]
-            [incremental-reader :as ir]
-            [queue-bytes :refer [uuid->bytes concat-byte-arrays]]
-            [queue-bytes-test :refer [=seq]]))
+            [incremental-reader :as ir]]
+            [queue-bytes-test :refer [=seq concat-uuids]]))
 
 (def !empty-conn (d/create-conn ir/schema))
 
@@ -18,8 +17,7 @@
 (deftest queries
          (testing "queue"
                   (is (=seq (byte-array 0) (ir/queue @!empty-conn "unknownUserID")))
-                  (is (=seq (concat-byte-arrays (uuid->bytes uuid2) (uuid->bytes uuid1))
-                            (ir/queue @!conn "testUserID"))))
+                  (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!conn "testUserID"))))
           (testing "extract"
                   (is (= nil (ir/extract @!empty-conn (java.util.UUID/randomUUID))))
                   (is (= {:db/id 3 :extract/uuid uuid2 :extract/source "https://two.com"}
@@ -44,8 +42,7 @@
 
 (deftest delete-extract
           (is (thrown? Exception (d/transact! !deletesConn [[:db.fn/call ir/delete-extract "unknownUserID" uuid1]])))
-         (is (=seq (concat-byte-arrays (uuid->bytes uuid2) (uuid->bytes uuid1))
-                   (ir/queue @!deletesConn "testUserID")))
+         (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!deletesConn "testUserID")))
          (is (= nil (ir/extract @!deletesConn uuidDeleted)))
          (is (= {:db/id 2 :extract/uuid uuid1 :extract/source "https://one.com"}
                 (ir/extract @!deletesConn uuid1)))
