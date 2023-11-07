@@ -15,7 +15,7 @@
                      ;; ::userID         {:db/valueType :db.type/string
                      ;;                   :db/unique :db.unique/identity
                      ;;                   :db/cardinality :db.cardinality/one}
-                     ;; ::queue          {:db/doc "byte array of UUIDs. Each UUID is 16 bytes."
+                     ;; ::queue          {:db/doc "byte array of UUIDs."
                      ;;                   :db/valueType :db.type/bytes
                      ;;                   :db/cardinality :db.cardinality/one}
                      ;; :extract/uuid    {:db/valueType :db.type/uuid
@@ -47,6 +47,9 @@
           (let [q (queue db userID)]
             (if (empty? q) nil (extract db (q/bytes->uuid q))))))
 
+#?(:clj (defn queue-size [db userID]
+          (/ (queue db userID) (q/uuid-size))))
+
 (defn empty->nil [s]
   (if (= s "") nil s))
 
@@ -60,18 +63,21 @@
               {::userID userID ::queue (f (byte-array 0))}))))
 
 ; TODO spec :extract/uuid is required
-#?(:clj (defn add-extract [db userID extract] "Add extract to the head of the user's queue"
+#?(:clj (defn add-extract "Add extract to the head of the user's queue" [db userID extract]
           [(map-queue db userID #(q/prepend-uuid % (:extract/uuid extract)))
            extract]))
 
-#?(:clj (defn delete-extract [db userID uuid] "Delete extract from a user's queue"
+#?(:clj (defn delete-extract "Delete extract from a user's queue" [db userID uuid]
           (if-let [e (ffirst (d/q '[:find ?e :in $ ?uuid
                                     :where [?e :extract/uuid ?uuid]] db uuid))]
             [(map-queue db userID #(q/remove-uuid % uuid))
              [:db.fn/retractEntity e]]
             [])))
 
-(e/defn URL-Import-Field [userID] "Add a URL to the head of the user's queue."
+#?(:clj (defn read-extract-last "Move extract from first to last in a user's queue" [db userID]
+          [(map-queue db userID q/move-first-uuid-to-last)]))
+
+(e/defn URL-Import-Field "Add a URL to the head of the user's queue." [userID]
   (dom/div
    (dom/input
     (dom/props {:placeholder "Import a URL..."})
@@ -95,12 +101,13 @@
               (let [uuid (:extract/uuid e)]
                 (dom/div (dom/text (str "TODO display extract: " e))
                          (dom/div
-                          (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID uuid]])))) (dom/text "Delete")))))
+                          (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID uuid]])))) (dom/text "Delete"))
+                          (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call read-extract-last userID]])))) (dom/text "Read Last")))))
+                ; TODO disable "Read Last" if queue only has 1 UUID
                 ; TODO add delete confirmation popup
                 ; TODO if it has :extract/content - display formatted text
                 ; TODO if it has :extract/source - add button to 'View Original' in a new tab (highlight extract text)
                 ; TODO save scroll position to resume next time
-                ; TODO add 'Read Last' button
                 ; TODO add 'Read Soon' button
                 ; TODO add 'Extract' button 
                 ;      create with :extract/content and :extract/parent and :extract/original IDs

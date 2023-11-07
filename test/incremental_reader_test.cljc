@@ -18,13 +18,13 @@
          (testing "queue"
                   (is (=seq (byte-array 0) (ir/queue @!empty-conn "unknownUserID")))
                   (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!conn "testUserID"))))
-          (testing "extract"
+         (testing "extract"
                   (is (= nil (ir/extract @!empty-conn (java.util.UUID/randomUUID))))
                   (is (= {:db/id 3 :extract/uuid uuid2 :extract/source "https://two.com"}
                          (ir/extract @!conn uuid2)))
                   ;; (is (= nil (ir/extract @!conn uuidDeleted)))
-                   )
-          (testing "first-extract"
+                  )
+         (testing "first-extract"
                   (is (= nil (ir/first-extract @!empty-conn "unknownUserID")))
                   (is (= {:db/id 3 :extract/uuid uuid2 :extract/source "https://two.com"}
                          (ir/first-extract @!conn "testUserID")))))
