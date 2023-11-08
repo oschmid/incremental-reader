@@ -38,17 +38,15 @@
                (ffirst)
                (or (byte-array 0)))))
 
-; TODO return all attributes except :db/id?
 #?(:clj (defn extract [db uuid]
-          (ffirst (d/q '[:find (pull ?e [*]) :in $ ?uuid
-                         :where [?e :extract/uuid ?uuid]] db uuid))))
+          (-> (ffirst (d/q '[:find (pull ?e [*]) :in $ ?uuid
+                             :where [?e :extract/uuid ?uuid]] db uuid))
+              (dissoc :db/id))))
 
-#?(:clj (defn first-extract [db userID]
+#?(:clj (defn first-extract "First extract and queue size" [db userID]
           (let [q (queue db userID)]
-            (if (empty? q) nil (extract db (q/bytes->uuid q))))))
-
-#?(:clj (defn queue-size [db userID]
-          (/ (queue db userID) (q/uuid-size))))
+            [(if (empty? q) nil (extract db (q/bytes->uuid q)))
+             (q/size q)])))
 
 (defn empty->nil [s]
   (if (= s "") nil s))
@@ -74,7 +72,7 @@
              [:db.fn/retractEntity e]]
             [])))
 
-#?(:clj (defn read-extract-last "Move extract from first to last in a user's queue" [db userID]
+#?(:clj (defn read-last "Move extract from first to last in a user's queue" [db userID]
           [(map-queue db userID q/move-first-uuid-to-last)]))
 
 (e/defn URL-Import-Field "Add a URL to the head of the user's queue." [userID]
@@ -89,30 +87,40 @@
                       (e/server
                        (e/discard
                         (d/transact! !conn [[:db.fn/call add-extract userID
-                                             {:extract/uuid (java.util.UUID/randomUUID) :extract/source v}]])))
+                                             {:extract/uuid (java.util.UUID/randomUUID) :extract/source v}]]))) ; TODO_ download with jsoup
                       (set! (.-value dom/node) ""))))))))
+
+(e/defn Read-Last-Button [userID qsize]
+        (dom/button
+           (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
+                               (new (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call read-last userID]]))))))
+                 busy# (or (= ::e/pending state#) ; backpressure the user
+                           (<= qsize 1))]
+             (dom/props {:disabled busy#, :aria-busy busy#})
+             (dom/text "Read Last")
+             (case state# ; 4 colors
+               (::e/pending ::e/failed) (throw v#)
+               (::e/init ::e/ok) v#))))
 
 (e/defn Incremental-Reader []
         (e/client
           (dom/link (dom/props {:rel :stylesheet :href "/incremental-reader.css"}))
           (let [userID "oschmid1"] ; TODO get user ID from Repl Auth
             (URL-Import-Field. userID)
-            (if-let [e (e/server (first-extract db userID))]
-              (let [uuid (:extract/uuid e)]
+            (let [[e qsize] (e/server (first-extract db userID))]
+              (if (some? e)
                 (dom/div (dom/text (str "TODO display extract: " e))
                          (dom/div
-                          (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID uuid]])))) (dom/text "Delete"))
-                          (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call read-extract-last userID]])))) (dom/text "Read Last")))))
-                ; TODO disable "Read Last" if queue only has 1 UUID
-                ; TODO add delete confirmation popup
+                          (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID (:extract/uuid e)]])))) (dom/text "Delete"))
+                          ; TODO add delete confirmation popup
+                          (Read-Last-Button. userID qsize)))
                 ; TODO if it has :extract/content - display formatted text
                 ; TODO if it has :extract/source - add button to 'View Original' in a new tab (highlight extract text)
-                ; TODO save scroll position to resume next time
                 ; TODO add 'Read Soon' button
                 ; TODO add 'Extract' button 
                 ;      create with :extract/content and :extract/parent and :extract/original IDs
                 ;      should insert after current extract
                 ; TODO add 'Delete Text' button to remove unnecessary text/html
-                ; TODO enable when the current extract has selected text (https://developer.mozilla.org/en-US/docs/Web/API/Document/selectionchange_event)
+                ;      enable when the current extract has selected text (https://developer.mozilla.org/en-US/docs/Web/API/Document/selectionchange_event)
                 ; TODO get [iframe selected text](https://stackoverflow.com/questions/1471759/how-to-get-selected-text-from-iframe-with-javascript)
-                (dom/div (dom/text "Welcome!"))))))
+                (dom/div (dom/text "Welcome!")))))))
