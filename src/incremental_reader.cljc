@@ -7,6 +7,7 @@
   (:import [hyperfiddle.electric Pending])
   (:require #?(:clj [datascript.core :as d]) ; database on server
             #?(:clj [queue-bytes :as q])
+            #?(:clj [extract-html :as html])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]))
@@ -21,7 +22,7 @@
                      ;; :extract/uuid    {:db/valueType :db.type/uuid
                      ;;                   :db/unique :db.unique/identity
                      ;;                   :db/cardinality :db.cardinality/one}
-                     ;; :extract/source  {:db/valueType :db.type/string ; TODO db.type/uri?
+                     ;; :extract/source  {:db/valueType :db.type/uri
                      ;;                   :db/cardinality :db.cardinality/one}
                      ;; :extract/content {:db/doc "HTML-formatted string"
                      ;;                   :db/valueType :db.type/string
@@ -75,8 +76,9 @@
 #?(:clj (defn read-last "Move extract from first to last in a user's queue" [db userID]
           [(map-queue db userID q/move-first-uuid-to-last)]))
 
-(e/defn URL-Import-Field "Add a URL to the head of the user's queue." [userID]
+(e/defn Import-Field "Add HTML/text (or scrape a URL) to the head of the user's queue." [userID]
   (dom/div
+   ; TODO add button to paste from clipboard? Eventually share to PWA?
    (dom/input
     (dom/props {:placeholder "Import a URL..."})
     (dom/on "keydown"
@@ -86,8 +88,14 @@
                       (dom/style {:background-color "yellow"}) ; loading
                       (e/server
                        (e/discard
-                        (d/transact! !conn [[:db.fn/call add-extract userID
-                                             {:extract/uuid (java.util.UUID/randomUUID) :extract/source v}]]))) ; TODO_ download with jsoup
+                        (let [source (html/uri v)
+                              extract (if (some? source)
+                                        {:extract/uuid (java.util.UUID/randomUUID)
+                                         :extract/content (html/scrape v)
+                                         :extract/source source}
+                                        {:extract/uuid (java.util.UUID/randomUUID)
+                                         :extract/content v})]
+                          (d/transact! !conn [[:db.fn/call add-extract userID extract]]))))
                       (set! (.-value dom/node) ""))))))))
 
 (e/defn Read-Last-Button [userID qsize]
@@ -106,7 +114,7 @@
         (e/client
           (dom/link (dom/props {:rel :stylesheet :href "/incremental-reader.css"}))
           (let [userID "oschmid1"] ; TODO get user ID from Repl Auth
-            (URL-Import-Field. userID)
+            (Import-Field. userID)
             (let [[e qsize] (e/server (first-extract db userID))]
               (if (some? e)
                 (dom/div (dom/text (str "TODO display extract: " e))
@@ -114,7 +122,7 @@
                           (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID (:extract/uuid e)]])))) (dom/text "Delete"))
                           ; TODO add delete confirmation popup
                           (Read-Last-Button. userID qsize)))
-                ; TODO if it has :extract/content - display formatted text
+                ; TODO_ if it has :extract/content - display formatted text
                 ; TODO if it has :extract/source - add button to 'View Original' in a new tab (highlight extract text)
                 ; TODO add 'Read Soon' button
                 ; TODO add 'Extract' button 
@@ -123,4 +131,8 @@
                 ; TODO add 'Delete Text' button to remove unnecessary text/html
                 ;      enable when the current extract has selected text (https://developer.mozilla.org/en-US/docs/Web/API/Document/selectionchange_event)
                 ; TODO get [iframe selected text](https://stackoverflow.com/questions/1471759/how-to-get-selected-text-from-iframe-with-javascript)
+                ; TODO edit extract as rich text?
+                ; TODO swipe word left to hide everything up to then, swipe right to extract? (Serves same purpose as bookmarks)
+                ; TODO button to "Randomize" queue
+                ; TODO allow filtering of queue by tags?
                 (dom/div (dom/text "Welcome!")))))))

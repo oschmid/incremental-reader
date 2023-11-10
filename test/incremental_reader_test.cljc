@@ -1,7 +1,7 @@
 (ns incremental-reader-test
   (:require [clojure.test :refer [deftest is testing]]
             [datascript.core :as d]
-            [incremental-reader :as ir]]
+            [incremental-reader :as ir]
             [queue-bytes-test :refer [=seq concat-uuids]]))
 
 (def !empty-conn (d/create-conn ir/schema))
@@ -20,13 +20,13 @@
                   (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!conn "testUserID"))))
          (testing "extract"
                   (is (= nil (ir/extract @!empty-conn (java.util.UUID/randomUUID))))
-                  (is (= {:db/id 3 :extract/uuid uuid2 :extract/source "https://two.com"}
+                  (is (= {:extract/uuid uuid2 :extract/source "https://two.com"}
                          (ir/extract @!conn uuid2)))
                   ;; (is (= nil (ir/extract @!conn uuidDeleted)))
                   )
          (testing "first-extract"
-                  (is (= nil (ir/first-extract @!empty-conn "unknownUserID")))
-                  (is (= {:db/id 3 :extract/uuid uuid2 :extract/source "https://two.com"}
+                  (is (= [nil 0] (ir/first-extract @!empty-conn "unknownUserID")))
+                  (is (= [{:extract/uuid uuid2 :extract/source "https://two.com"} 2]
                          (ir/first-extract @!conn "testUserID")))))
 
 (def !deletesConn (d/create-conn ir/schema))
@@ -44,7 +44,7 @@
           (is (thrown? Exception (d/transact! !deletesConn [[:db.fn/call ir/delete-extract "unknownUserID" uuid1]])))
          (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!deletesConn "testUserID")))
          (is (= nil (ir/extract @!deletesConn uuidDeleted)))
-         (is (= {:db/id 2 :extract/uuid uuid1 :extract/source "https://one.com"}
+         (is (= {:extract/uuid uuid1 :extract/source "https://one.com"}
                 (ir/extract @!deletesConn uuid1)))
-         (is (= {:db/id 3 :extract/uuid uuid2 :extract/source "https://two.com"}
+         (is (= {:extract/uuid uuid2 :extract/source "https://two.com"}
            (ir/extract @!deletesConn uuid2))))

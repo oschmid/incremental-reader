@@ -2,7 +2,7 @@
 
 ;; Functions to work with a queue that's represented as a byte array of UUIDs
 
-(def ^:private uuid-size 16)
+(def uuid-size 16)
 
 (defn put-uuid [bb uuid]
   (-> bb
