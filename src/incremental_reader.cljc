@@ -2,12 +2,15 @@
   
   ; trick shadow into ensuring that client/server always have the same version
   ; all .cljc files containing Electric code must have this line!
-  #?(:cljs (:require-macros incremental-reader)) ; <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  #?(:cljs (:require-macros [incremental-reader :refer [with-reagent]]))
   
   (:import [hyperfiddle.electric Pending])
   (:require #?(:clj [datascript.core :as d]) ; database on server
-            #?(:clj [queue-bytes :as q])
             #?(:clj [extract-html :as html])
+            #?(:clj [queue-bytes :as q])
+            ;; #?(:cljs [hickory.core :as h]) TODO_
+            #?(:cljs [reagent.core :as r])
+            #?(:cljs ["react-dom/client" :as ReactDom])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]))
@@ -85,7 +88,7 @@
             (e/fn [e]
                   (when (= "Enter" (.-key e))
                     (when-some [v (empty->nil (.. e -target -value))]
-                      (dom/style {:background-color "yellow"}) ; loading
+                      (dom/style {:background-color "yellow"}) ; TODO disable during load instead
                       (e/server
                        (e/discard
                         (let [source (html/uri v)
@@ -97,6 +100,27 @@
                                          :extract/content v})]
                           (d/transact! !conn [[:db.fn/call add-extract userID extract]]))))
                       (set! (.-value dom/node) ""))))))))
+
+#?(:cljs (def ReactRootWrapper
+   (r/create-class
+    {:component-did-mount (fn [this] (js/console.log "mounted"))
+     :render (fn [this]
+               (let [[_ Component & args] (r/argv this)]
+                 (into [Component] args)))})))
+
+#?(:cljs (defn create-root
+           "See https://reactjs.org/docs/react-dom-client.html#createroot"
+           ([node] (create-root node (str (gensym))))
+           ([node id-prefix] (ReactDom/createRoot node #js {:identifierPrefix id-prefix}))))
+
+#?(:cljs (defn render [root & args] 
+   (.render root (r/as-element (into [ReactRootWrapper] args)))))
+
+(defmacro with-reagent [& args]
+  `(dom/div  ; React will hijack this element and empty it.
+    (let [root# (create-root dom/node)]
+      (render root# ~@args)
+      (e/on-unmount #(.unmount root#)))))
 
 (e/defn Read-Last-Button [userID qsize]
         (dom/button
@@ -110,29 +134,33 @@
                (::e/pending ::e/failed) (throw v#)
                (::e/init ::e/ok) v#))))
 
+(defn Editor []
+  #?(:cljs
+     [:ul [:li "one"] [:li "two"]]))
+
 (e/defn Incremental-Reader []
         (e/client
           (dom/link (dom/props {:rel :stylesheet :href "/incremental-reader.css"}))
-          (let [userID "oschmid1"] ; TODO get user ID from Repl Auth
+          (let [userID "oschmid1" ; TODO get user ID from Repl Auth
+                [e qsize] (e/server (first-extract db userID))]
             (Import-Field. userID)
-            (let [[e qsize] (e/server (first-extract db userID))]
-              (if (some? e)
-                (dom/div (dom/text (str "TODO display extract: " e))
-                         (dom/div
-                          (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID (:extract/uuid e)]])))) (dom/text "Delete"))
-                          ; TODO add delete confirmation popup
-                          (Read-Last-Button. userID qsize)))
-                ; TODO_ if it has :extract/content - display formatted text
-                ; TODO if it has :extract/source - add button to 'View Original' in a new tab (highlight extract text)
-                ; TODO add 'Read Soon' button
-                ; TODO add 'Extract' button 
-                ;      create with :extract/content and :extract/parent and :extract/original IDs
-                ;      should insert after current extract
-                ; TODO add 'Delete Text' button to remove unnecessary text/html
-                ;      enable when the current extract has selected text (https://developer.mozilla.org/en-US/docs/Web/API/Document/selectionchange_event)
-                ; TODO get [iframe selected text](https://stackoverflow.com/questions/1471759/how-to-get-selected-text-from-iframe-with-javascript)
-                ; TODO edit extract as rich text?
-                ; TODO swipe word left to hide everything up to then, swipe right to extract? (Serves same purpose as bookmarks)
-                ; TODO button to "Randomize" queue
-                ; TODO allow filtering of queue by tags?
-                (dom/div (dom/text "Welcome!")))))))
+            (with-reagent Editor) ; {:content "<span>text <b>bold</b></span>"}) ; TODO_ fix Invalid hook call
+            (if (some? e)
+              (dom/div (dom/text (str "TODO display extract: " e))
+                       (dom/div
+                        (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID (:extract/uuid e)]])))) (dom/text "Delete"))
+                        ; TODO add delete confirmation popup
+                        (Read-Last-Button. userID qsize)))
+              ; TODO if it has :extract/source - add button to 'View Original' in a new tab (highlight extract text)
+              ; TODO add 'Read Soon' button
+              ; TODO add 'Extract' button 
+              ;      create with :extract/content and :extract/parent and :extract/original IDs
+              ;      should insert after current extract
+              ; TODO add 'Delete Text' button to remove unnecessary text/html
+              ;      enable when the current extract has selected text (https://developer.mozilla.org/en-US/docs/Web/API/Document/selectionchange_event)
+              ; TODO get [iframe selected text](https://stackoverflow.com/questions/1471759/how-to-get-selected-text-from-iframe-with-javascript)
+              ; TODO edit extract as rich text?
+              ; TODO swipe word left to hide everything up to then, swipe right to extract? (Serves same purpose as bookmarks)
+              ; TODO button to "Randomize" queue
+              ; TODO allow filtering of queue by tags?
+              (dom/div (dom/text "Welcome!"))))))

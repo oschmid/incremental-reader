@@ -1,9 +1,12 @@
 {
-  "name": "incremental-rea",
+  "name": "incremental-reader",
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
     "shadow-cljs": "~2.22.10"
   },
-  "dependencies": {}
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
 }
