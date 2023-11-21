@@ -8,9 +8,10 @@
   (:require #?(:clj [datascript.core :as d]) ; database on server
             #?(:clj [extract-html :as html])
             #?(:clj [queue-bytes :as q])
-            ;; #?(:cljs [hickory.core :as h]) TODO_
             #?(:cljs [reagent.core :as r])
             #?(:cljs ["react-dom/client" :as ReactDom])
+            #?(:cljs ["@tiptap/react" :refer (EditorProvider)])
+            #?(:cljs ["@tiptap/starter-kit" :refer (StarterKit)])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]))
@@ -134,9 +135,10 @@
                (::e/pending ::e/failed) (throw v#)
                (::e/init ::e/ok) v#))))
 
-(defn Editor []
+(defn Editor [extract]
   #?(:cljs
-     [:ul [:li "one"] [:li "two"]]))
+     (let [content (:extract/content extract)]
+      [:> EditorProvider {:extensions [StarterKit] :content content}])))
 
 (e/defn Incremental-Reader []
         (e/client
@@ -144,9 +146,8 @@
           (let [userID "oschmid1" ; TODO get user ID from Repl Auth
                 [e qsize] (e/server (first-extract db userID))]
             (Import-Field. userID)
-            (with-reagent Editor) ; {:content "<span>text <b>bold</b></span>"}) ; TODO_ fix Invalid hook call
             (if (some? e)
-              (dom/div (dom/text (str "TODO display extract: " e))
+              (dom/div (with-reagent Editor e)
                        (dom/div
                         (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID (:extract/uuid e)]])))) (dom/text "Delete"))
                         ; TODO add delete confirmation popup
@@ -158,8 +159,6 @@
               ;      should insert after current extract
               ; TODO add 'Delete Text' button to remove unnecessary text/html
               ;      enable when the current extract has selected text (https://developer.mozilla.org/en-US/docs/Web/API/Document/selectionchange_event)
-              ; TODO get [iframe selected text](https://stackoverflow.com/questions/1471759/how-to-get-selected-text-from-iframe-with-javascript)
-              ; TODO edit extract as rich text?
               ; TODO swipe word left to hide everything up to then, swipe right to extract? (Serves same purpose as bookmarks)
               ; TODO button to "Randomize" queue
               ; TODO allow filtering of queue by tags?
