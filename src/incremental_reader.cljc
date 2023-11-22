@@ -2,19 +2,17 @@
   
   ; trick shadow into ensuring that client/server always have the same version
   ; all .cljc files containing Electric code must have this line!
-  #?(:cljs (:require-macros [incremental-reader :refer [with-reagent]]))
+  #?(:cljs (:require-macros incremental-reader))
   
   (:import [hyperfiddle.electric Pending])
+
   (:require #?(:clj [datascript.core :as d]) ; database on server
             #?(:clj [extract-html :as html])
             #?(:clj [queue-bytes :as q])
-            #?(:cljs [reagent.core :as r])
-            #?(:cljs ["react-dom/client" :as ReactDom])
-            #?(:cljs ["@tiptap/react" :refer (EditorProvider)])
-            #?(:cljs ["@tiptap/starter-kit" :refer (StarterKit)])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
-            [hyperfiddle.electric-ui4 :as ui]))
+            [hyperfiddle.electric-ui4 :as ui]
+            [incremental-reader.editor :refer [Editor]]))
 
 #?(:clj (def schema {; TODO fix "Bad attribute specification, expected one of :db.type/tuple :db.type/ref"
                      ;; ::userID         {:db/valueType :db.type/string
@@ -102,27 +100,6 @@
                           (d/transact! !conn [[:db.fn/call add-extract userID extract]]))))
                       (set! (.-value dom/node) ""))))))))
 
-#?(:cljs (def ReactRootWrapper
-   (r/create-class
-    {:component-did-mount (fn [this] (js/console.log "mounted"))
-     :render (fn [this]
-               (let [[_ Component & args] (r/argv this)]
-                 (into [Component] args)))})))
-
-#?(:cljs (defn create-root
-           "See https://reactjs.org/docs/react-dom-client.html#createroot"
-           ([node] (create-root node (str (gensym))))
-           ([node id-prefix] (ReactDom/createRoot node #js {:identifierPrefix id-prefix}))))
-
-#?(:cljs (defn render [root & args] 
-   (.render root (r/as-element (into [ReactRootWrapper] args)))))
-
-(defmacro with-reagent [& args]
-  `(dom/div  ; React will hijack this element and empty it.
-    (let [root# (create-root dom/node)]
-      (render root# ~@args)
-      (e/on-unmount #(.unmount root#)))))
-
 (e/defn Read-Last-Button [userID qsize]
         (dom/button
            (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
@@ -135,11 +112,6 @@
                (::e/pending ::e/failed) (throw v#)
                (::e/init ::e/ok) v#))))
 
-(defn Editor [extract]
-  #?(:cljs
-     (let [content (:extract/content extract)]
-      [:> EditorProvider {:extensions [StarterKit] :content content}])))
-
 (e/defn Incremental-Reader []
         (e/client
           (dom/link (dom/props {:rel :stylesheet :href "/incremental-reader.css"}))
@@ -147,7 +119,7 @@
                 [e qsize] (e/server (first-extract db userID))]
             (Import-Field. userID)
             (if (some? e)
-              (dom/div (with-reagent Editor e)
+              (dom/div (Editor. e) ; TODO fix switching extract not refreshing the editor contents
                        (dom/div
                         (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-extract userID (:extract/uuid e)]])))) (dom/text "Delete"))
                         ; TODO add delete confirmation popup
