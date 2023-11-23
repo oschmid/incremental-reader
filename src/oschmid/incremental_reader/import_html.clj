@@ -15,6 +15,6 @@
   (-> (Jsoup/connect url) ; default timeout is 30 seconds
       (.get)
       (.outerHtml)
-      ; TODO add domain specific filters (e.g. wikipedia)
-      (Jsoup/clean (Safelist/basicWithImages))))
+      ; TODO add domain specific filters (e.g. wikipedia) based on Anki IR plugin
+      (Jsoup/clean (Safelist/basicWithImages)))) ; TODO get safelist from Anki IR plugin
 
