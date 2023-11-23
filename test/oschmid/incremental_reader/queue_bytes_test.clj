@@ -1,10 +1,10 @@
-(ns queue-bytes-test
+(ns oschmid.incremental-reader.queue-bytes-test
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is]]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [queue-bytes :as q :refer [bytes->uuid uuid->bytes]]))
+            [oschmid.incremental-reader.queue-bytes :as q :refer [bytes->uuid uuid->bytes]]))
 
 ;; Generate deterministic type-4 UUIDs with Clojure's test.check
 ;; https://gist.github.com/jcf/7a91c9473b57b1834704

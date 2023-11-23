@@ -1,13 +1,13 @@
 (ns user ^:dev/always ; recompile (macroexpand) electric-main when any cljs src changes
   (:require
-    incremental-reader
     hyperfiddle.electric
-    hyperfiddle.electric-dom2))
+    hyperfiddle.electric-dom2
+    [oschmid.incremental-reader :refer [Incremental-Reader]]))
 
 (def electric-main
   (hyperfiddle.electric/boot ; Electric macroexpansion - Clojure to signals compiler
     (binding [hyperfiddle.electric-dom2/node js/document.body]
-      (incremental-reader/Incremental-Reader.))))
+      (Incremental-Reader.))))
 
 (defonce reactor nil)
 
@@ -20,3 +20,4 @@
 (defn ^:dev/before-load stop! []
   (when reactor (reactor)) ; teardown
   (set! reactor nil))
+

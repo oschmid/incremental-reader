@@ -1,8 +1,8 @@
-(ns extract-html-test
+(ns oschmid.incremental-reader.import-html-test
   
   (:import [java.net URI])
   (:require [clojure.test :refer [deftest is]]
-            [extract-html :as html]))
+            [oschmid.incremental-reader.import-html :as html]))
 
 (deftest uri-test
          (is (= nil (html/uri "plain text")))

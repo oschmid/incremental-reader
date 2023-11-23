@@ -1,18 +1,18 @@
-(ns incremental-reader
+(ns oschmid.incremental-reader
   
   ; trick shadow into ensuring that client/server always have the same version
   ; all .cljc files containing Electric code must have this line!
-  #?(:cljs (:require-macros incremental-reader))
+  #?(:cljs (:require-macros oschmid.incremental-reader))
   
   (:import [hyperfiddle.electric Pending])
 
   (:require #?(:clj [datascript.core :as d]) ; database on server
-            #?(:clj [extract-html :as html])
-            #?(:clj [queue-bytes :as q])
+            #?(:clj [oschmid.incremental-reader.import-html :as html])
+            #?(:clj [oschmid.incremental-reader.queue-bytes :as q])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]
-            [incremental-reader.editor :refer [Editor]]))
+            [oschmid.incremental-reader.editor :refer [Editor]]))
 
 #?(:clj (def schema {; TODO fix "Bad attribute specification, expected one of :db.type/tuple :db.type/ref"
                      ;; ::userID         {:db/valueType :db.type/string

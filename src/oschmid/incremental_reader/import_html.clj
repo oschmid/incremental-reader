@@ -1,4 +1,4 @@
-(ns extract-html
+(ns oschmid.incremental-reader.import-html
 
   (:import [java.net MalformedURLException URISyntaxException URL]
            [org.jsoup Jsoup]
@@ -17,3 +17,4 @@
       (.outerHtml)
       ; TODO add domain specific filters (e.g. wikipedia)
       (Jsoup/clean (Safelist/basicWithImages))))
+

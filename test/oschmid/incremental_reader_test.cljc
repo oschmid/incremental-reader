@@ -1,8 +1,8 @@
-(ns incremental-reader-test
+(ns oschmid.incremental-reader-test
   (:require [clojure.test :refer [deftest is testing]]
             [datascript.core :as d]
-            [incremental-reader :as ir]
-            [queue-bytes-test :refer [=seq concat-uuids]]))
+            [oschmid.incremental-reader :as ir]
+            [oschmid.incremental-reader.queue-bytes-test :refer [=seq concat-uuids]]))
 
 (def !empty-conn (d/create-conn ir/schema))
 

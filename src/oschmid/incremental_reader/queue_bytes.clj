@@ -1,4 +1,4 @@
-(ns queue-bytes)
+(ns oschmid.incremental-reader.queue-bytes)
 
 ;; Functions to work with a queue that's represented as a byte array of UUIDs
 

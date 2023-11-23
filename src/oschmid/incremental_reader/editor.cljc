@@ -1,8 +1,8 @@
-(ns incremental-reader.editor
+(ns oschmid.incremental-reader.editor
 
   ; trick shadow into ensuring that client/server always have the same version
   ; all .cljc files containing Electric code must have this line!
-  #?(:cljs (:require-macros [incremental-reader.editor :refer [with-reagent]]))
+  #?(:cljs (:require-macros [oschmid.incremental-reader.editor :refer [with-reagent]]))
 
   (:require #?(:cljs [reagent.core :as r])
             #?(:cljs ["react-dom/client" :as ReactDom])
