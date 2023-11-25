@@ -14,22 +14,21 @@
             [hyperfiddle.electric-ui4 :as ui]
             [oschmid.incremental-reader.topic :refer [TopicReader]]))
 
-#?(:clj (def schema {; TODO fix "Bad attribute specification, expected one of :db.type/tuple :db.type/ref"
-                     ;; ::userID         {:db/valueType :db.type/string
-                     ;;                   :db/unique :db.unique/identity
-                     ;;                   :db/cardinality :db.cardinality/one}
-                     ;; ::queue          {:db/doc "byte array of UUIDs."
-                     ;;                   :db/valueType :db.type/bytes
-                     ;;                   :db/cardinality :db.cardinality/one}
-                     ;; :topic/uuid    {:db/valueType :db.type/uuid
-                     ;;                   :db/unique :db.unique/identity
-                     ;;                   :db/cardinality :db.cardinality/one}
-                     ;; :topic/source  {:db/valueType :db.type/uri
-                     ;;                   :db/cardinality :db.cardinality/one}
-                     ;; :topic/content {:db/doc "HTML-formatted string"
-                     ;;                   :db/valueType :db.type/string
-                     ;;                   :db/cardinality :db.cardinality/one}
-                     }))
+#?(:clj (def schema {::userID       {; :db/valueType :db.type/string
+                                       :db/unique :db.unique/identity
+                                       :db/cardinality :db.cardinality/one}
+                     ::queue        {; :db/valueType :db.type/bytes
+                                       :db/doc "byte array of UUIDs."
+                                       :db/cardinality :db.cardinality/one}
+                     :topic/uuid    {; :db/valueType :db.type/uuid
+                                       :db/unique :db.unique/identity
+                                       :db/cardinality :db.cardinality/one}
+                     :topic/source  {; :db/valueType :db.type/uri
+                                       :db/cardinality :db.cardinality/one}
+                     :topic/content {; :db/valueType :db.type/string
+                                       :db/doc "HTML-formatted string"
+                                       :db/cardinality :db.cardinality/one}}))
+
 ; TODO add persistent DB
 #?(:clj (defonce !conn (d/create-conn schema))) ; database on server
 #?(:clj (e/def db (e/watch !conn)))
