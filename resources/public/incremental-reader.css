@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@100;200;300;400;500;600;700&display=swap');
 
 body{
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: 400;
+    font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 1.2rem;
+    max-width: 700px;
+    margin: 0 auto;
 }
+
