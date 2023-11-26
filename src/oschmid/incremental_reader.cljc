@@ -62,9 +62,8 @@
               [:db/add e ::queue (f q)]
               {::userID userID ::queue (f (byte-array 0))}))))
 
-; TODO spec :topic/uuid is required
-#?(:clj (defn add-topic "Add topic to the head of the user's queue" [db userID topic]
-          [(map-queue db userID #(q/prepend-uuid % (:topic/uuid topic)))
+#?(:clj (defn add-topic "Add topic to the head of the user's queue" [db userID {uuid :topic/uuid :as topic}]
+          [(map-queue db userID #(q/prepend-uuid % uuid))
            topic]))
 
 #?(:clj (defn delete-topic "Delete topic from a user's queue" [db userID uuid]

@@ -1,8 +1,10 @@
 (ns oschmid.incremental-reader.import-html-test
   
-  (:import [java.net URI])
+  (:import [java.net URI]
+           [org.jsoup Jsoup])
   (:require [clojure.test :refer [deftest is]]
-            [oschmid.incremental-reader.import-html :as html]))
+            [oschmid.incremental-reader.import-html :as html]
+            [text-diff :refer [are-vars-eq]]))
 
 (deftest uri-test
          (is (= nil (html/uri "plain text")))
@@ -23,4 +25,10 @@
          (is (= nil (html/uri "http://foo.com/hello world/")))
          (is (= (URI. "http://foo.com/hello%20world")
                 (html/uri "http://foo.com/hello%20world"))))
- 
+
+(deftest clean-doc-test
+  (let [expected-value (.trim (slurp "test/oschmid/incremental_reader/pre-push-checklist-clean.html"))
+        actual-value (html/clean (Jsoup/parse (slurp "test/oschmid/incremental_reader/pre-push-checklist.html")))
+        [diff-actual diff-expected] (are-vars-eq actual-value expected-value)]
+    (is (= diff-actual diff-expected))))
+

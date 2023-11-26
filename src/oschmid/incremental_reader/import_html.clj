@@ -11,11 +11,16 @@
     (catch URISyntaxException _ nil)
     (catch MalformedURLException _ nil)))
 
-; Allows a full range of text and structural body HTML: a, b, blockquote, br, caption, cite, code, col, colgroup, dd, div, dl, dt, em, h1, h2, h3, h4, h5, h6, i, img, li, ol, p, pre, q, small, span, strike, strong, sub, sup, table, tbody, td, tfoot, th, thead, tr, u, ul
+; Allows a full range of text and structural body HTML:
+;   a, b, blockquote, br, caption, cite, code, col, colgroup, dd, div, dl,
+;   dt, em, h1, h2, h3, h4, h5, h6, i, img, li, ol, p, pre, q, small, span,
+;   strike, strong, sub, sup, table, tbody, td, tfoot, th, thead, tr, u, ul
+(defn clean [doc]
+  (-> doc (.body) (.html) (Jsoup/clean (Safelist/relaxed))))
+
 (defn scrape "Scrape text and images" [url]
   (-> (Jsoup/connect url) ; default timeout is 30 seconds
-      (.get)
-      (.outerHtml)
+      (clean)))
       ; TODO add domain specific filters (e.g. wikipedia) based on Anki IR plugin
-      (Jsoup/clean (Safelist/relaxed)))) ; TODO _ share safelist with TopicReader schema
+      ; TODO share safelist with TopicReader schema
 
