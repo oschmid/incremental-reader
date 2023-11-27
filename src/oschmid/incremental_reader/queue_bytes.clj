@@ -31,7 +31,6 @@
       (.put queue-bytes)
       (.array)))
 
-; TODO spec not nil
 (defn index-of [queue-bytes uuid]
   (loop [i 0]
     (cond

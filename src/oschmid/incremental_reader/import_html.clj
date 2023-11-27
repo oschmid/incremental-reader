@@ -20,6 +20,7 @@
 
 (defn scrape "Scrape text and images" [url]
   (-> (Jsoup/connect url) ; default timeout is 30 seconds
+      (.get)
       (clean)))
       ; TODO add domain specific filters (e.g. wikipedia) based on Anki IR plugin
       ; TODO share safelist with TopicReader schema
