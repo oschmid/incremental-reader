@@ -85,7 +85,7 @@
             (e/fn [e]
                   (when (= "Enter" (.-key e))
                     (when-some [v (empty->nil (.. e -target -value))]
-                      (dom/style {:background-color "yellow"}) ; TODO disable during load instead
+                      (dom/style {:background-color "#e5e7e9" :disabled true})
                       (e/server
                        (e/discard
                         (let [source (html/uri v)
