@@ -1,4 +1,5 @@
 (ns oschmid.incremental-reader.queue-bytes-test
+
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is]]
             [clojure.test.check.clojure-test :refer [defspec]]
@@ -84,3 +85,4 @@
          (is (=seq (byte-array 0) (q/move-first-uuid-to-last (byte-array 0))))
          (is (=seq uuid1-bytes (q/move-first-uuid-to-last uuid1-bytes)))
          (is (=seq (concat-uuids uuid2 uuid3 uuid1) (q/move-first-uuid-to-last uuids-123-bytes))))
+

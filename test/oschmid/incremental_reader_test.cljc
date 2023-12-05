@@ -1,17 +1,19 @@
 (ns oschmid.incremental-reader-test
+
   (:require [clojure.test :refer [deftest is testing]]
             [datascript.core :as d]
             [oschmid.incremental-reader :as ir]
+            [oschmid.incremental-reader.db :as db]
             [oschmid.incremental-reader.queue-bytes-test :refer [=seq concat-uuids]]))
 
-(def !empty-conn (d/create-conn ir/schema))
+(def !empty-conn (d/create-conn db/schema))
 
-(def !conn (d/create-conn ir/schema))
+(def !conn (d/create-conn db/schema))
 (def uuid1 (java.util.UUID/randomUUID))
 (def uuid2 (java.util.UUID/randomUUID))
-(d/transact! !conn [[:db.fn/call ir/add-topic "testUserID"
+(d/transact! !conn [[:db.fn/call db/add-topic "testUserID"
                      {:topic/uuid uuid1 :topic/source "https://one.com"}]])
-(d/transact! !conn [[:db.fn/call ir/add-topic "testUserID"
+(d/transact! !conn [[:db.fn/call db/add-topic "testUserID"
                      {:topic/uuid uuid2 :topic/source "https://two.com"}]])
 
 (deftest queries
@@ -19,23 +21,23 @@
                   (is (=seq (byte-array 0) (ir/queue @!empty-conn "unknownUserID")))
                   (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!conn "testUserID"))))
          (testing "topic"
-                  (is (= nil (ir/topic @!empty-conn (java.util.UUID/randomUUID))))
+                  (is (= nil (db/topic @!empty-conn (java.util.UUID/randomUUID))))
                   (is (= {:topic/uuid uuid2 :topic/source "https://two.com"}
-                         (ir/topic @!conn uuid2)))
-                  ;; (is (= nil (ir/topic @!conn uuidDeleted)))
+                         (db/topic @!conn uuid2)))
+                  ;; (is (= nil (db/topic @!conn uuidDeleted)))
                   )
          (testing "first-topic"
                   (is (= [nil 0] (ir/first-topic @!empty-conn "unknownUserID")))
                   (is (= [{:topic/uuid uuid2 :topic/source "https://two.com"} 2]
                          (ir/first-topic @!conn "testUserID")))))
 
-(def !deletesConn (d/create-conn ir/schema))
+(def !deletesConn (d/create-conn db/schema))
 (def uuidDeleted (java.util.UUID/randomUUID))
-(d/transact! !deletesConn [[:db.fn/call ir/add-topic "testUserID"
+(d/transact! !deletesConn [[:db.fn/call db/add-topic "testUserID"
                             {:topic/uuid uuid1 :topic/source "https://one.com"}]])
-(d/transact! !deletesConn [[:db.fn/call ir/add-topic "testUserID"
+(d/transact! !deletesConn [[:db.fn/call db/add-topic "testUserID"
                             {:topic/uuid uuid2 :topic/source "https://two.com"}]])
-(d/transact! !deletesConn [[:db.fn/call ir/add-topic "testUserID"
+(d/transact! !deletesConn [[:db.fn/call db/add-topic "testUserID"
                             {:topic/uuid uuidDeleted :topic/source "https://three.com"}]])
 (d/transact! !deletesConn [[:db.fn/call ir/delete-topic "testUserID" uuidDeleted]])
 (d/transact! !deletesConn [[:db.fn/call ir/delete-topic "testUserID" (java.util.UUID/randomUUID)]])
@@ -43,9 +45,9 @@
 (deftest delete-topic
           (is (thrown? Exception (d/transact! !deletesConn [[:db.fn/call ir/delete-topic "unknownUserID" uuid1]])))
          (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!deletesConn "testUserID")))
-         (is (= nil (ir/topic @!deletesConn uuidDeleted)))
+         (is (= nil (db/topic @!deletesConn uuidDeleted)))
          (is (= {:topic/uuid uuid1 :topic/source "https://one.com"}
-                (ir/topic @!deletesConn uuid1)))
+                (db/topic @!deletesConn uuid1)))
          (is (= {:topic/uuid uuid2 :topic/source "https://two.com"}
-           (ir/topic @!deletesConn uuid2))))
+           (db/topic @!deletesConn uuid2))))
 
