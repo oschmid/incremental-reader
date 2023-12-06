@@ -17,10 +17,10 @@
 ;;;; Reagent Interop
 
 #?(:cljs (def ReactRootWrapper
-   (r/create-class
-    {:render (fn [this]
-               (let [[_ Component & args] (r/argv this)]
-                 (into [Component] args)))})))
+           (r/create-class
+            {:render (fn [this]
+                       (let [[_ Component & args] (r/argv this)]
+                         (into [Component] args)))})))
 
 #?(:cljs (defn create-root
            "See https://reactjs.org/docs/react-dom-client.html#createroot"
@@ -28,7 +28,7 @@
            ([node id-prefix] (ReactDom/createRoot node #js {:identifierPrefix id-prefix}))))
 
 #?(:cljs (defn render [root & args]
-   (.render root (r/as-element (into [ReactRootWrapper] args)))))
+           (.render root (r/as-element (into [ReactRootWrapper] args)))))
 
 (defmacro with-reagent [& args]
   `(dom/div  ; React will hijack this element and empty it.
@@ -40,9 +40,9 @@
 
 #?(:clj (defn map-topic-content "Update topic content" [db uuid f]
           (when-let [{e :db/id content :topic/content}
-                   (ffirst (d/q '[:find (pull ?e [:db/id :topic/content])
-                                  :in $ ?uuid
-                                  :where [?e :topic/uuid ?uuid]] db uuid))]
+                     (ffirst (d/q '[:find (pull ?e [:db/id :topic/content])
+                                    :in $ ?uuid
+                                    :where [?e :topic/uuid ?uuid]] db uuid))]
             [:db/add e :topic/content (f content)])))
 
 #?(:clj (defn complement-ranges [ranges length]
@@ -81,7 +81,7 @@
              [:<>
               [:> EditorContent {:editor editor}]
               [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?}
-                [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]]])))
+               [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]]])))
 
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
            [:f> topic-reader content onEvent]))

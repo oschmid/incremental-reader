@@ -30,7 +30,6 @@
        (gen/fmap (fn [xs] (java.util.UUID/fromString (apply str xs))))))
 ;; End of gist
 
-
 (defn =seq [a b]
   (= (seq a) (seq b)))
 
@@ -47,7 +46,7 @@
 
 (defspec uuid-bytes-conversion 10
   (prop/for-all [uuid gen-uuid]
-    (= uuid (bytes->uuid (uuid->bytes uuid)))))
+                (= uuid (bytes->uuid (uuid->bytes uuid)))))
 
 (def uuid1 (java.util.UUID/randomUUID))
 (def uuid2 (java.util.UUID/randomUUID))

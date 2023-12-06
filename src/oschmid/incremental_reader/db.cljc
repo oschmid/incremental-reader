@@ -5,19 +5,19 @@
                       [oschmid.incremental-reader.queue-bytes :as q]])))
 
 #?(:clj (def schema {::userID       {; :db/valueType :db.type/string
-                                       :db/unique :db.unique/identity
-                                       :db/cardinality :db.cardinality/one}
+                                     :db/unique :db.unique/identity
+                                     :db/cardinality :db.cardinality/one}
                      ::queue        {; :db/valueType :db.type/bytes
-                                       :db/doc "byte array of UUIDs."
-                                       :db/cardinality :db.cardinality/one}
+                                     :db/doc "byte array of UUIDs."
+                                     :db/cardinality :db.cardinality/one}
                      :topic/uuid    {; :db/valueType :db.type/uuid
-                                       :db/unique :db.unique/identity
-                                       :db/cardinality :db.cardinality/one}
+                                     :db/unique :db.unique/identity
+                                     :db/cardinality :db.cardinality/one}
                      :topic/source  {; :db/valueType :db.type/uri
-                                       :db/cardinality :db.cardinality/one}
+                                     :db/cardinality :db.cardinality/one}
                      :topic/content {; :db/valueType :db.type/string
-                                       :db/doc "HTML-formatted string"
-                                       :db/cardinality :db.cardinality/one}}))
+                                     :db/doc "HTML-formatted string"
+                                     :db/cardinality :db.cardinality/one}}))
 
 ; TODO add persistent DB
 #?(:clj (defonce !conn (d/create-conn schema))) ; database on server
