@@ -4,23 +4,21 @@
   ; all .cljc files containing Electric code must have this line!
   #?(:cljs (:require-macros [oschmid.incremental-reader.topic :refer [with-reagent]]))
 
-  (:require #?(:clj [datascript.core :as d])
-            #?(:cljs [reagent.core :as r])
-            #?(:cljs ["react-dom/client" :as ReactDom])
-            #?(:cljs ["@tiptap/core" :refer (isTextSelection)])
-            #?(:cljs ["@tiptap/react" :refer (BubbleMenu EditorContent useEditor)])
-            #?(:cljs ["@tiptap/starter-kit" :refer (StarterKit)])
+  (:require #?@(:clj [[datascript.core :as d]]
+                :cljs [["react-dom/client" :as ReactDom]
+                       ["@tiptap/core" :refer (isTextSelection)]
+                       ["@tiptap/react" :refer (BubbleMenu EditorContent useEditor)]
+                       ["@tiptap/starter-kit" :refer (StarterKit)]
+                       [reagent.core :as r]])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
-            [hyperfiddle.electric-ui4 :as ui]
             [oschmid.incremental-reader.db :refer [!conn]]))
 
 ;;;; Reagent Interop
 
 #?(:cljs (def ReactRootWrapper
    (r/create-class
-    {:component-did-mount (fn [this])
-     :render (fn [this]
+    {:render (fn [this]
                (let [[_ Component & args] (r/argv this)]
                  (into [Component] args)))})))
 
@@ -41,7 +39,7 @@
 ;;;; DB transactions
 
 #?(:clj (defn map-topic-content "Update topic content" [db uuid f]
-          (if-let [{e :db/id content :topic/content}
+          (when-let [{e :db/id content :topic/content}
                    (ffirst (d/q '[:find (pull ?e [:db/id :topic/content])
                                   :in $ ?uuid
                                   :where [?e :topic/uuid ?uuid]] db uuid))]
@@ -83,7 +81,7 @@
              [:<>
               [:> EditorContent {:editor editor}]
               [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?}
-                [:button {:onClick (fn[e] (onEvent :delete (map range->vec (.. editor -state -selection -ranges))))} "Delete"]]])))
+                [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]]])))
 
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
            [:f> topic-reader content onEvent]))
@@ -97,13 +95,10 @@
               (with-reagent topic-reader-wrapper content
                 (fn [eventType v]
                   (when (= eventType :delete) (reset! !deleteEvent v)))))))
-; TODO get selection indexes (https://benborgers.com/posts/tiptap-selection)
-;   editor.view.state.selection.from
-;   editor.view.state.selection.to
-; TODO delete topic text in DB
 ; TODO add 'Extract' button 
 ;      create with :topic/content and :topic/parent and :topic/original IDs
 ;      should insert after current topic?
+; TODO add 'Split' button
 ; TODO swipe word left to hide everything up to then, swipe right to extract? (Serves same purpose as bookmarks)
 ; TODO if it has :topic/source - add button to 'View Original' in a new tab (highlight topic text on page like search engines do using a fragment)
 

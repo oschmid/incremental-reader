@@ -1,7 +1,8 @@
 (ns oschmid.incremental-reader.db
-  (:require [datascript.core :as d]
-            [hyperfiddle.electric :as e]
-            [oschmid.incremental-reader.queue-bytes :as q]))
+
+  (:require #?@(:clj [[datascript.core :as d]
+                      [hyperfiddle.electric :as e]
+                      [oschmid.incremental-reader.queue-bytes :as q]])))
 
 #?(:clj (def schema {::userID       {; :db/valueType :db.type/string
                                        :db/unique :db.unique/identity

@@ -17,7 +17,9 @@
         org.jsoup/jsoup {:mvn/version "1.16.1"}
         reagent/reagent {:mvn/version "1.2.0"}
         ring-basic-authentication/ring-basic-authentication {:mvn/version "1.1.1"}}
- :aliases {:dev {:extra-deps {binaryage/devtools {:mvn/version "1.0.6"}
+ :aliases {:clj-kondo {:replace-deps {clj-kondo/clj-kondo {:mvn/version "RELEASE"}}
+                       :main-opts ["-m" "clj-kondo.main"]}
+           :dev {:extra-deps {binaryage/devtools {:mvn/version "1.0.6"}
                               thheller/shadow-cljs {:mvn/version "2.22.10"}}
                  :jvm-opts   ["-Xss2m" ; https://github.com/hyperfiddle/electric/issues/11
                               "-Dclojure.tools.logging.factory=clojure.tools.logging.impl/slf4j-factory"

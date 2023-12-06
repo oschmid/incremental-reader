@@ -4,11 +4,9 @@
   ; all .cljc files containing Electric code must have this line!
   #?(:cljs (:require-macros oschmid.incremental-reader))
   
-  (:import [hyperfiddle.electric Pending])
-
-  (:require #?(:clj [datascript.core :as d]) ; database on server
-            #?(:clj [oschmid.incremental-reader.import-html :as html])
-            #?(:clj [oschmid.incremental-reader.queue-bytes :as q])
+  (:require #?@(:clj [[datascript.core :as d] ; database on server
+                      [oschmid.incremental-reader.import-html :as html]
+                      [oschmid.incremental-reader.queue-bytes :as q]])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]

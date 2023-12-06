@@ -4,6 +4,8 @@ The goal is to build a mobile-first incremental reading companion to Anki. Letti
 
 ## Development
 
+Run clj-kondo linter with `clj -M:clj-kondo --lint src`
+
 Run dev mode at with `clj -X:dev`
 
 Run tests with `clj -X:test`

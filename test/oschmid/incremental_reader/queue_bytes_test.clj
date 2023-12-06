@@ -59,30 +59,30 @@
 (def uuids-123-bytes (concat-uuids uuid1 uuid2 uuid3))
 
 (deftest prepend-uuid-test
-         (is (=seq uuid1-bytes (q/prepend-uuid (byte-array 0) uuid1)))
-         (is (=seq uuids-123-bytes (q/prepend-uuid uuids-23-bytes uuid1))))
+  (is (=seq uuid1-bytes (q/prepend-uuid (byte-array 0) uuid1)))
+  (is (=seq uuids-123-bytes (q/prepend-uuid uuids-23-bytes uuid1))))
 
 (deftest index-of-test
-         (is (= -1 (q/index-of (byte-array 0) uuid1)))
-         (is (= 0 (q/index-of uuids-123-bytes uuid1)))
-         (is (= q/uuid-size (q/index-of uuids-123-bytes uuid2)))
-         (is (= (* 2 q/uuid-size) (q/index-of uuids-123-bytes uuid3)))
-         (is (= -1 (q/index-of uuids-123-bytes (java.util.UUID/randomUUID))))
-         (is (= -1 (q/index-of nil uuid1)))
-         (is (thrown? NullPointerException (q/index-of uuids-123-bytes nil))))
+  (is (= -1 (q/index-of (byte-array 0) uuid1)))
+  (is (= 0 (q/index-of uuids-123-bytes uuid1)))
+  (is (= q/uuid-size (q/index-of uuids-123-bytes uuid2)))
+  (is (= (* 2 q/uuid-size) (q/index-of uuids-123-bytes uuid3)))
+  (is (= -1 (q/index-of uuids-123-bytes (java.util.UUID/randomUUID))))
+  (is (= -1 (q/index-of nil uuid1)))
+  (is (thrown? NullPointerException (q/index-of uuids-123-bytes nil))))
 
 (deftest remove-uuid-test
-         (is (thrown? Exception (q/remove-uuid (byte-array 0) uuid1)))
-         (is (=seq (byte-array 0) (q/remove-uuid uuid1-bytes uuid1)))
-         (is (=seq uuids-23-bytes (q/remove-uuid uuids-123-bytes uuid1)))
-         (is (=seq uuids-13-bytes (q/remove-uuid uuids-123-bytes uuid2)))
-         (is (=seq uuids-12-bytes (q/remove-uuid uuids-123-bytes uuid3)))
-         (is (thrown? Exception (q/remove-uuid (byte-array 0) nil)))
-         (is (thrown? Exception (q/remove-uuid uuid1-bytes nil)))
-         (is (thrown? Exception (q/remove-uuid nil uuid1))))
+  (is (thrown? Exception (q/remove-uuid (byte-array 0) uuid1)))
+  (is (=seq (byte-array 0) (q/remove-uuid uuid1-bytes uuid1)))
+  (is (=seq uuids-23-bytes (q/remove-uuid uuids-123-bytes uuid1)))
+  (is (=seq uuids-13-bytes (q/remove-uuid uuids-123-bytes uuid2)))
+  (is (=seq uuids-12-bytes (q/remove-uuid uuids-123-bytes uuid3)))
+  (is (thrown? Exception (q/remove-uuid (byte-array 0) nil)))
+  (is (thrown? Exception (q/remove-uuid uuid1-bytes nil)))
+  (is (thrown? Exception (q/remove-uuid nil uuid1))))
 
 (deftest move-first-uuid-to-last-test
-         (is (=seq (byte-array 0) (q/move-first-uuid-to-last (byte-array 0))))
-         (is (=seq uuid1-bytes (q/move-first-uuid-to-last uuid1-bytes)))
-         (is (=seq (concat-uuids uuid2 uuid3 uuid1) (q/move-first-uuid-to-last uuids-123-bytes))))
+  (is (=seq (byte-array 0) (q/move-first-uuid-to-last (byte-array 0))))
+  (is (=seq uuid1-bytes (q/move-first-uuid-to-last uuid1-bytes)))
+  (is (=seq (concat-uuids uuid2 uuid3 uuid1) (q/move-first-uuid-to-last uuids-123-bytes))))
 

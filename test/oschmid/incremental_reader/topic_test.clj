@@ -1,10 +1,9 @@
 (ns oschmid.incremental-reader.topic-test
 
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.test :refer [deftest is]]
             [datascript.core :as d]
             [oschmid.incremental-reader.db :as db]
-            [oschmid.incremental-reader.topic :as topic]
-            [oschmid.incremental-reader.queue-bytes :as q]))
+            [oschmid.incremental-reader.topic :as topic]))
 
 (deftest complement-ranges-test
   (is (= [] (topic/complement-ranges [[0 5]] 5)))
