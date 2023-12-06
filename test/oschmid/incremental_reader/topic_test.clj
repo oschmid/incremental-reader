@@ -22,10 +22,11 @@
                      {:topic/uuid uuid1 :topic/content "0123456789"}]])
 (d/transact! !conn [[:db.fn/call db/add-topic "testUserID"
                      {:topic/uuid uuid2 :topic/content "0123456789"}]])
-(d/transact! !conn [[:db.fn/call topic/delete-from-topic uuid1 [[0 5]]]])
-(d/transact! !conn [[:db.fn/call topic/delete-from-topic uuid2 [[1 2] [5 9]]]])
+(d/transact! !conn [[:db.fn/call topic/delete-from-topic uuid1 (hash "0123456789") [[0 5]]]])
+(d/transact! !conn [[:db.fn/call topic/delete-from-topic uuid2 (hash "0123456789") [[1 2] [5 9]]]])
 
 (deftest delete-from-topic-test
   (is (= "56789" (:topic/content (db/topic @!conn uuid1))))
-  (is (= "02349" (:topic/content (db/topic @!conn uuid2)))))
+  (is (= "02349" (:topic/content (db/topic @!conn uuid2))))
+  (is (thrown? IllegalArgumentException (d/transact! !conn [[:db.fn/call topic/delete-from-topic uuid1 (hash "bad") [[0 5]]]]))))
 

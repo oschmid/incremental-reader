@@ -41,5 +41,5 @@
 
 #?(:clj (defn add-topic "Add topic to the head of the user's queue" [db userID {uuid :topic/uuid :as topic}]
           [(map-queue db userID #(q/prepend-uuid % uuid))
-           topic]))
+           (assoc topic :topic/content-hash (hash (:topic/content topic)))]))
 

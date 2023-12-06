@@ -51,13 +51,10 @@
                   (e/server
                    (e/discard
                     (let [source (html/uri v)
-                          topic (if (some? source)
-                                  {:topic/uuid (java.util.UUID/randomUUID)
-                                   :topic/content (html/scrape v)
-                                   :topic/source source}
-                                  {:topic/uuid (java.util.UUID/randomUUID)
-                                   :topic/content (html/clean v)})]
-                      (d/transact! !conn [[:db.fn/call add-topic userID topic]]))))
+                          content (if (some? source) (html/scrape v) (html/clean v))
+                          topic {:topic/uuid (java.util.UUID/randomUUID)
+                                 :topic/content content}] ; TODO add created date
+                      (d/transact! !conn [[:db.fn/call add-topic userID (if (some? source) (assoc topic :topic/source source) topic)]]))))
                   (set! (.-value dom/node) ""))))))))
 
 (e/defn Read-Last-Button [userID qsize]

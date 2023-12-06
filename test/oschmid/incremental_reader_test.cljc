@@ -22,11 +22,11 @@
     (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!conn "testUserID"))))
   (testing "topic"
     (is (= nil (db/topic @!empty-conn (java.util.UUID/randomUUID))))
-    (is (= {:topic/uuid uuid2 :topic/source "https://two.com"}
+    (is (= {:topic/uuid uuid2 :topic/content-hash 0 :topic/source "https://two.com"}
            (db/topic @!conn uuid2))))
   (testing "first-topic"
     (is (= [nil 0] (ir/first-topic @!empty-conn "unknownUserID")))
-    (is (= [{:topic/uuid uuid2 :topic/source "https://two.com"} 2]
+    (is (= [{:topic/uuid uuid2 :topic/content-hash 0 :topic/source "https://two.com"} 2]
            (ir/first-topic @!conn "testUserID")))))
 
 (def !deletesConn (d/create-conn db/schema))
@@ -44,8 +44,8 @@
   (is (thrown? Exception (d/transact! !deletesConn [[:db.fn/call ir/delete-topic "unknownUserID" uuid1]])))
   (is (=seq (concat-uuids uuid2 uuid1) (ir/queue @!deletesConn "testUserID")))
   (is (= nil (db/topic @!deletesConn uuidDeleted)))
-  (is (= {:topic/uuid uuid1 :topic/source "https://one.com"}
+  (is (= {:topic/uuid uuid1 :topic/content-hash 0 :topic/source "https://one.com"}
          (db/topic @!deletesConn uuid1)))
-  (is (= {:topic/uuid uuid2 :topic/source "https://two.com"}
+  (is (= {:topic/uuid uuid2 :topic/content-hash 0 :topic/source "https://two.com"}
          (db/topic @!deletesConn uuid2))))
 

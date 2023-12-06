@@ -38,12 +38,15 @@
 
 ;;;; DB transactions
 
-#?(:clj (defn map-topic-content "Update topic content" [db uuid f]
-          (when-let [{e :db/id content :topic/content}
-                     (ffirst (d/q '[:find (pull ?e [:db/id :topic/content])
-                                    :in $ ?uuid
-                                    :where [?e :topic/uuid ?uuid]] db uuid))]
-            [:db/add e :topic/content (f content)])))
+#?(:clj (defn map-topic-content "Update topic content" [db uuid user-content-hash f]
+          (let [{e :db/id content :topic/content db-content-hash :topic/content-hash}
+                (ffirst (d/q '[:find (pull ?e [:db/id :topic/content :topic/content-hash])
+                               :in $ ?uuid
+                               :where [?e :topic/uuid ?uuid]] db uuid))]
+            (if-not (= user-content-hash db-content-hash)
+              (throw (IllegalArgumentException. (str "Topic is out of date. db has hash=" db-content-hash " user has hash=" user-content-hash)))
+              (let [new-content (f content)]
+                {:db/id e :topic/content new-content :topic/content-hash (hash new-content)})))))
 
 #?(:clj (defn complement-ranges [ranges length]
           (->> (flatten ranges)
@@ -51,13 +54,12 @@
                (#(if (= (last %) length) (drop-last %) (concat % [length])))
                (partition 2))))
 
-#?(:clj (defn tprn [x] (prn x) x))
-
-#?(:clj (defn delete-from-topic [db uuid ranges]
-          [(map-topic-content db uuid (fn [s] (->> (count s)
-                                                   (complement-ranges ranges)
-                                                   (map (fn [[from to]] (subs s from to)))
-                                                   (apply str))))]))
+#?(:clj (defn delete-from-topic [db uuid content-hash ranges]
+          [(map-topic-content db uuid content-hash
+                              (fn [s] (->> (count s)
+                                           (complement-ranges ranges)
+                                           (map (fn [[from to]] (subs s from to)))
+                                           (apply str))))]))
 
 ;;;; UI
 
@@ -86,11 +88,11 @@
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
            [:f> topic-reader content onEvent]))
 
-(e/defn TopicReader [{uuid :topic/uuid content :topic/content}]
+(e/defn TopicReader [{uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
   (e/client (let [!deleteEvent (atom nil)
                   deleteEvent (e/watch !deleteEvent)]
               (when (some? deleteEvent)
-                (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid deleteEvent]])))
+                (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash deleteEvent]])))
                 (reset! !deleteEvent nil))
               (with-reagent topic-reader-wrapper content
                 (fn [eventType v]
