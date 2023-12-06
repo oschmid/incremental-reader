@@ -28,7 +28,7 @@
 
 (deftest clean-doc-test
   (let [expected-value (.trim (slurp "test/oschmid/incremental_reader/pre-push-checklist-clean.html"))
-        actual-value (html/clean (Jsoup/parse (slurp "test/oschmid/incremental_reader/pre-push-checklist.html")))
+        actual-value (html/clean (slurp "test/oschmid/incremental_reader/pre-push-checklist.html"))
         [diff-actual diff-expected] (are-vars-eq actual-value expected-value)]
     (is (= diff-actual diff-expected))))
 

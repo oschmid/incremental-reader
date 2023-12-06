@@ -56,7 +56,7 @@
                                          :topic/content (html/scrape v)
                                          :topic/source source}
                                         {:topic/uuid (java.util.UUID/randomUUID)
-                                         :topic/content v})]
+                                         :topic/content (html/clean v)})]
                           (d/transact! !conn [[:db.fn/call add-topic userID topic]]))))
                       (set! (.-value dom/node) ""))))))))
 
