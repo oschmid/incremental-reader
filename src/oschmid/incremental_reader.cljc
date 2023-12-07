@@ -53,8 +53,9 @@
                    (e/discard
                     (let [source (html/uri v)
                           content (if (some? source) (html/scrape v) (html/clean v)) ; TODO import page title, use first 50 chars if pasted
-                          topic {:topic/uuid (java.util.UUID/randomUUID)
-                                 :topic/content content}] ; TODO add created date
+                          topic {:topic/content content
+                                 :topic/created (java.util.Date.)
+                                 :topic/uuid (java.util.UUID/randomUUID)}]
                       (d/transact! !conn [[:db.fn/call add-topic userID (if (some? source) (assoc topic :topic/source source) topic)]]))))
                   (set! (.-value dom/node) ""))))))))
 
