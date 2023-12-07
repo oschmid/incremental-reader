@@ -83,6 +83,7 @@
              [:<> ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
               [:> EditorContent {:editor editor}]
               [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO style tippy svg arrow
+               [:button {:onClick #(onEvent :delete [[0 (dec (min (.. editor -state -selection -$anchor -pos) (.. editor -state -selection -$head -pos)))]])} "Delete Before"]
                [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]]])))
 
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
