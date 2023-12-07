@@ -38,6 +38,7 @@
 #?(:clj (defn read-last "Move topic from first to last in a user's queue" [db userID]
           [(map-queue db userID q/move-first-uuid-to-last)]))
 
+; TODO make a button show this as a popup
 (e/defn Import-Field "Add HTML/text (or scrape a URL) to the head of the user's queue." [userID]
   (dom/div
    ; TODO add button to paste from clipboard? Eventually share to PWA?
@@ -51,7 +52,7 @@
                   (e/server
                    (e/discard
                     (let [source (html/uri v)
-                          content (if (some? source) (html/scrape v) (html/clean v))
+                          content (if (some? source) (html/scrape v) (html/clean v)) ; TODO import page title, use first 50 chars if pasted
                           topic {:topic/uuid (java.util.UUID/randomUUID)
                                  :topic/content content}] ; TODO add created date
                       (d/transact! !conn [[:db.fn/call add-topic userID (if (some? source) (assoc topic :topic/source source) topic)]]))))
@@ -81,6 +82,7 @@
                  (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-topic userID (:topic/uuid topic)]])))) (dom/text "Delete Topic"))
                         ; TODO add delete confirmation popup
                  (Read-Last-Button. userID qsize)))
+              ; TODO add sync with Ankiweb
               ; TODO add 'Read Soon' button
               ; TODO button to "Randomize" queue
               ; TODO allow filtering of queue by tags?

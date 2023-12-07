@@ -80,9 +80,9 @@
            (when-let [editor (useEditor (clj->js {:content content :editable false :extensions [StarterKit] :parseOptions {:preserveWhitespace "full"}}))]
              (when-not (= (. editor getText) content)
                ((.. editor -commands -setContent) content false (clj->js {:preserveWhitespace "full"})))
-             [:<>
+             [:<> ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
               [:> EditorContent {:editor editor}]
-              [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?}
+              [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO style tippy svg arrow
                [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]]])))
 
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
@@ -100,6 +100,9 @@
 ; TODO add 'Extract' button 
 ;      create with :topic/content and :topic/parent and :topic/original IDs
 ;      should insert after current topic?
+;      style and link extract: use topic and topic-<uuid> classes?
+; TODO add create question button
+;      copy selected text as question, cloze, or answer
 ; TODO add 'Split' button
 ; TODO swipe word left to hide everything up to then, swipe right to extract? (Serves same purpose as bookmarks)
 ; TODO if it has :topic/source - add button to 'View Original' in a new tab (highlight topic text on page like search engines do using a fragment)
