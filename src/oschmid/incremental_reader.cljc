@@ -81,7 +81,7 @@
        (dom/div (TopicReader. topic)
                 (dom/div
                  (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-topic userID (:topic/uuid topic)]])))) (dom/text "Delete Topic"))
-                        ; TODO add delete confirmation popup
+                        ; TODO add delete confirmation popup, or Undo functionality for whole app
                  (Read-Last-Button. userID qsize)))
               ; TODO add sync with Ankiweb
               ; TODO add 'Read Soon' button

@@ -84,20 +84,21 @@
               [:> EditorContent {:editor editor}]
               [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO style tippy svg arrow
                [:button {:onClick #(onEvent :delete [[0 (dec (min (.. editor -state -selection -$anchor -pos) (.. editor -state -selection -$head -pos)))]])} "Delete Before"]
-               [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]]])))
+               [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
+               [:button {:onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]]])))
 
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
            [:f> topic-reader content onEvent]))
 
 (e/defn TopicReader [{uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
-  (e/client (let [!deleteEvent (atom nil)
-                  deleteEvent (e/watch !deleteEvent)]
-              (when (some? deleteEvent)
-                (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash deleteEvent]])))
-                (reset! !deleteEvent nil))
-              (with-reagent topic-reader-wrapper content
-                (fn [eventType v]
-                  (when (= eventType :delete) (reset! !deleteEvent v)))))))
+  (e/client
+    (let [!event (atom nil)]
+      (when-let [[eventType v] (e/watch !event)]
+        (case eventType
+          :delete (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash v]])))
+          :extract (prn "extract"))
+        (reset! !event nil))
+      (with-reagent topic-reader-wrapper content #(reset! !event [%1 %2])))))
 ; TODO add 'Extract' button 
 ;      create with :topic/content and :topic/parent and :topic/original IDs
 ;      should insert after current topic?
