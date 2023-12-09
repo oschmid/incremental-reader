@@ -61,6 +61,12 @@
   (is (=seq uuid1-bytes (q/prepend-uuid (byte-array 0) uuid1)))
   (is (=seq uuids-123-bytes (q/prepend-uuid uuids-23-bytes uuid1))))
 
+(deftest insert-uuid-test
+  (is (=seq uuid1-bytes (q/insert-uuid (byte-array 0) uuid1 0)))
+  (is (=seq uuids-123-bytes (q/insert-uuid uuids-23-bytes uuid1 0)))
+  (is (=seq uuids-123-bytes (q/insert-uuid uuids-13-bytes uuid2 1)))
+  (is (=seq uuids-123-bytes (q/insert-uuid uuids-12-bytes uuid3 2))))
+
 (deftest index-of-test
   (is (= -1 (q/index-of (byte-array 0) uuid1)))
   (is (= 0 (q/index-of uuids-123-bytes uuid1)))

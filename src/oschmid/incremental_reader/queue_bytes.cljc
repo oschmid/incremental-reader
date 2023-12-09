@@ -24,12 +24,18 @@
 #?(:clj (defn size [queue-bytes]
           (/ (count queue-bytes) uuid-size)))
 
-#?(:clj (defn prepend-uuid [queue-bytes uuid]
+#?(:clj (defn insert-uuid [queue-bytes uuid i]
+          {:pre [(or (zero? i) (pos-int? i))
+                 (<= i (size queue-bytes))]}
           (-> (byte-array (+ (count queue-bytes) uuid-size))
               (java.nio.ByteBuffer/wrap)
+              (.put queue-bytes 0 (* i uuid-size))
               (put-uuid uuid)
-              (.put queue-bytes)
+              (.put queue-bytes (* i uuid-size) (- (count queue-bytes) (* i uuid-size)))
               (.array))))
+
+#?(:clj (defn prepend-uuid [queue-bytes uuid]
+          (insert-uuid queue-bytes uuid 0)))
 
 #?(:clj (defn index-of [queue-bytes uuid]
           (loop [i 0]

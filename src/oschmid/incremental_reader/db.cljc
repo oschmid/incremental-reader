@@ -25,10 +25,12 @@
 
 ;;;; Topic Queries/Transactions
 
-#?(:clj (defn topic [db uuid]
-          (-> (ffirst (d/q '[:find (pull ?e [*]) :in $ ?uuid
-                             :where [?e :topic/uuid ?uuid]] db uuid))
-              (dissoc :db/id))))
+#?(:clj (defn queue [db userID]
+          (-> (d/q '[:find ?queue :in $ ?userID
+                     :where [?e :oschmid.incremental-reader/userID ?userID]
+                     [(get-else $ ?e :oschmid.incremental-reader/queue (byte-array 0)) ?queue]] db userID)
+              (ffirst)
+              (or (byte-array 0)))))
 
 #?(:clj (defn map-queue [db userID f]
           (let [{e :db/id q :oschmid.incremental-reader/queue}
@@ -42,4 +44,8 @@
 #?(:clj (defn add-topic "Add topic to the head of the user's queue" [db userID {uuid :topic/uuid :as topic}]
           [(map-queue db userID #(q/prepend-uuid % uuid))
            (assoc topic :topic/content-hash (hash (:topic/content topic)))]))
+
+#?(:clj (defn topic [db uuid]
+          (ffirst (d/q '[:find (pull ?e [*]) :in $ ?uuid
+                         :where [?e :topic/uuid ?uuid]] db uuid))))
 

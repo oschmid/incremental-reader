@@ -10,15 +10,8 @@
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]
-            [oschmid.incremental-reader.db :refer [!conn add-topic db map-queue topic]]
+            [oschmid.incremental-reader.db :refer [!conn add-topic db map-queue topic queue]]
             [oschmid.incremental-reader.topic :refer [TopicReader]]))
-
-#?(:clj (defn queue [db userID]
-          (-> (d/q '[:find ?queue :in $ ?userID
-                     :where [?e ::userID ?userID]
-                     [(get-else $ ?e ::queue (byte-array 0)) ?queue]] db userID)
-              (ffirst)
-              (or (byte-array 0)))))
 
 #?(:clj (defn first-topic "First topic and queue size" [db userID]
           (let [q (queue db userID)]

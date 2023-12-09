@@ -13,7 +13,8 @@
                        [reagent.core :as r]])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
-            [oschmid.incremental-reader.db :refer [!conn map-queue]]))
+            [oschmid.incremental-reader.db :refer [!conn map-queue topic]]
+            [oschmid.incremental-reader.queue-bytes :as q]))
 
 ;;;; Reagent Interop
 
@@ -39,11 +40,6 @@
 
 ;;;; DB transactions
 
-#?(:clj (defn topic-content [db uuid]
-          (ffirst (d/q '[:find (pull ?e [:db/id :topic/content :topic/content-hash])
-                         :in $ ?uuid
-                         :where [?e :topic/uuid ?uuid]] db uuid))))
-
 #?(:clj (defn check-content-hash [user-content-hash db-content-hash]
           (when-not (= user-content-hash db-content-hash)
             (throw (IllegalArgumentException. (str "Topic is out of date. db has hash=" db-content-hash " user has hash=" user-content-hash))))))
@@ -55,7 +51,7 @@
                (partition 2))))
 
 #?(:clj (defn delete-from-topic [db uuid user-content-hash ranges]
-          (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic-content db uuid)]
+          (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic db uuid)]
             (check-content-hash user-content-hash db-content-hash)
             (let [new-content (->> (count content)
                                    (complement-ranges ranges)
@@ -64,19 +60,29 @@
               [{:db/id e :topic/content new-content :topic/content-hash (hash new-content)}]))))
 
 #?(:clj (defn extract-from-topic [db userID uuid user-content-hash ranges]
-          (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic-content db uuid)]
+          (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic db uuid)]
             (check-content-hash user-content-hash db-content-hash)
-            (let [child-uuid (java.util.UUID/randomUUID)]
-              [; TODO: update parent topic:
-               ;   replace selected ranges with links to new child topic
-               ;   create a custom node:  <topic uuid=":topic/uuid"/> (https://tiptap.dev/guide/custom-extensions#create-a-node)
-               ;     render something like: <a class="topic" href="#:topic/uuid">:topic/title</a>
-               ;   how to show linked :topic/title without duplicating it in parent :topic/content?
+            (let [child-uuid (java.util.UUID/randomUUID)
+                  link (str "<a class=\"topic\" data-id=\"" (.toString child-uuid) "\">[[...]]</a>")
+                  size (count content)
+                  new-content (->> (complement-ranges ranges size)
+                                   (#(if (zero? (ffirst %)) % (cons [0 0] %)))
+                                   (#(if (= (last (last %)) (count content)) % (concat % [[size size]])))
+                                   (map (fn [[from to]] (subs content from to)))
+                                   (join link))
+                  child-content (->> ranges (map (fn [[from to]] (subs content from to))) (join "\n\n"))]
+              ; TODO: handle extract containing existing link(s)
+              ;   e.g. A is parent to B, X is new extract of A containing link to B. A becomes parent to X, X becomes parent to B.
+              ;   Look for links in `child-content`, update the parent of those topics to point to `child-uuid`
+              [{:db/id e
+                :topic/content new-content
+                :topic/content-hash (hash new-content)}
                {:topic/uuid child-uuid
                 :topic/created (java.util.Date.)
-                :topic/content (->> ranges (map (fn [[from to]] (subs content from to))) (join "\n\n"))
+                :topic/content child-content
+                :topic/content-hash (hash child-content)
                 :topic/parent e}
-               (map-queue db userID (fn [q] q))])))) ; TODO: insert into queue after current topic
+               (map-queue db userID #(q/insert-uuid % child-uuid 1))]))))
 
 ;;;; UI
 
@@ -95,6 +101,9 @@
 
 #?(:cljs (defn topic-reader [content onEvent]
            (when-let [editor (useEditor (clj->js {:content content :editable false :extensions [StarterKit] :parseOptions {:preserveWhitespace "full"}}))]
+               ; TODO: create a custom node:  <topic uuid=":topic/uuid"/> (https://tiptap.dev/guide/custom-extensions#create-a-node)
+               ;       render something like: <a class="topic" href="#:topic/uuid">:topic/title</a>
+               ;       how to show linked :topic/title without duplicating it in parent :topic/content?
              (when-not (= (. editor getText) content)
                ((.. editor -commands -setContent) content false (clj->js {:preserveWhitespace "full"})))
              [:<> ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
@@ -109,13 +118,13 @@
 
 (e/defn TopicReader [userID {uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
   (e/client
-    (let [!event (atom nil)]
-      (when-let [[eventType v] (e/watch !event)]
-        (case eventType
-          :delete (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash v]])))
-          :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]]))))
-        (reset! !event nil))
-      (with-reagent topic-reader-wrapper content #(reset! !event [%1 %2])))))
+   (let [!event (atom nil)]
+     (when-let [[eventType v] (e/watch !event)]
+       (case eventType
+         :delete (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash v]])))
+         :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]]))))
+       (reset! !event nil))
+     (with-reagent topic-reader-wrapper content #(reset! !event [%1 %2])))))
 ; TODO add create question button
 ;      copy selected text as question, cloze, or answer
 ; TODO add 'Split' button

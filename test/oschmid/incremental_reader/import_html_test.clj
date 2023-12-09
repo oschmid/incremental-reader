@@ -3,8 +3,7 @@
   (:require [clojure.test :refer [deftest is]]
             [oschmid.incremental-reader.import-html :as html]
             [text-diff :refer [are-vars-eq]])
-  (:import [java.net URI]
-           [org.jsoup Jsoup]))
+  (:import [java.net URI]))
 
 (deftest uri-test
   (is (= nil (html/uri "plain text")))
