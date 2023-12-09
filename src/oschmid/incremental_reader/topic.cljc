@@ -4,7 +4,8 @@
   ; all .cljc files containing Electric code must have this line!
   #?(:cljs (:require-macros [oschmid.incremental-reader.topic :refer [with-reagent]]))
 
-  (:require #?@(:clj [[datascript.core :as d]]
+  (:require #?@(:clj [[clojure.string :refer [join]]
+                      [datascript.core :as d]]
                 :cljs [["react-dom/client" :as ReactDom]
                        ["@tiptap/core" :refer (isTextSelection)]
                        ["@tiptap/react" :refer (BubbleMenu EditorContent useEditor)]
@@ -12,7 +13,7 @@
                        [reagent.core :as r]])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
-            [oschmid.incremental-reader.db :refer [!conn]]))
+            [oschmid.incremental-reader.db :refer [!conn map-queue]]))
 
 ;;;; Reagent Interop
 
@@ -38,15 +39,14 @@
 
 ;;;; DB transactions
 
-#?(:clj (defn map-topic-content "Update topic content" [db uuid user-content-hash f]
-          (let [{e :db/id content :topic/content db-content-hash :topic/content-hash}
-                (ffirst (d/q '[:find (pull ?e [:db/id :topic/content :topic/content-hash])
-                               :in $ ?uuid
-                               :where [?e :topic/uuid ?uuid]] db uuid))]
-            (if-not (= user-content-hash db-content-hash)
-              (throw (IllegalArgumentException. (str "Topic is out of date. db has hash=" db-content-hash " user has hash=" user-content-hash)))
-              (let [new-content (f content)]
-                {:db/id e :topic/content new-content :topic/content-hash (hash new-content)})))))
+#?(:clj (defn topic-content [db uuid]
+          (ffirst (d/q '[:find (pull ?e [:db/id :topic/content :topic/content-hash])
+                         :in $ ?uuid
+                         :where [?e :topic/uuid ?uuid]] db uuid))))
+
+#?(:clj (defn check-content-hash [user-content-hash db-content-hash]
+          (when-not (= user-content-hash db-content-hash)
+            (throw (IllegalArgumentException. (str "Topic is out of date. db has hash=" db-content-hash " user has hash=" user-content-hash))))))
 
 #?(:clj (defn complement-ranges [ranges length]
           (->> (flatten ranges)
@@ -54,12 +54,29 @@
                (#(if (= (last %) length) (drop-last %) (concat % [length])))
                (partition 2))))
 
-#?(:clj (defn delete-from-topic [db uuid content-hash ranges]
-          [(map-topic-content db uuid content-hash
-                              (fn [s] (->> (count s)
-                                           (complement-ranges ranges)
-                                           (map (fn [[from to]] (subs s from to)))
-                                           (apply str))))]))
+#?(:clj (defn delete-from-topic [db uuid user-content-hash ranges]
+          (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic-content db uuid)]
+            (check-content-hash user-content-hash db-content-hash)
+            (let [new-content (->> (count content)
+                                   (complement-ranges ranges)
+                                   (map (fn [[from to]] (subs content from to)))
+                                   (apply str))]
+              [{:db/id e :topic/content new-content :topic/content-hash (hash new-content)}]))))
+
+#?(:clj (defn extract-from-topic [db userID uuid user-content-hash ranges]
+          (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic-content db uuid)]
+            (check-content-hash user-content-hash db-content-hash)
+            (let [child-uuid (java.util.UUID/randomUUID)]
+              [; TODO: update parent topic:
+               ;   replace selected ranges with links to new child topic
+               ;   create a custom node:  <topic uuid=":topic/uuid"/> (https://tiptap.dev/guide/custom-extensions#create-a-node)
+               ;     render something like: <a class="topic" href="#:topic/uuid">:topic/title</a>
+               ;   how to show linked :topic/title without duplicating it in parent :topic/content?
+               {:topic/uuid child-uuid
+                :topic/created (java.util.Date.)
+                :topic/content (->> ranges (map (fn [[from to]] (subs content from to))) (join "\n\n"))
+                :topic/parent e}
+               (map-queue db userID (fn [q] q))])))) ; TODO: insert into queue after current topic
 
 ;;;; UI
 
@@ -82,7 +99,7 @@
                ((.. editor -commands -setContent) content false (clj->js {:preserveWhitespace "full"})))
              [:<> ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
               [:> EditorContent {:editor editor}]
-              [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO style tippy svg arrow
+              [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO replace with a bottom FloatingMenu so as not to be hidden by mobile text selection menus
                [:button {:onClick #(onEvent :delete [[0 (dec (min (.. editor -state -selection -$anchor -pos) (.. editor -state -selection -$head -pos)))]])} "Delete Before"]
                [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
                [:button {:onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]]])))
@@ -90,19 +107,15 @@
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
            [:f> topic-reader content onEvent]))
 
-(e/defn TopicReader [{uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
+(e/defn TopicReader [userID {uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
   (e/client
     (let [!event (atom nil)]
       (when-let [[eventType v] (e/watch !event)]
         (case eventType
           :delete (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash v]])))
-          :extract (prn "extract"))
+          :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]]))))
         (reset! !event nil))
       (with-reagent topic-reader-wrapper content #(reset! !event [%1 %2])))))
-; TODO add 'Extract' button 
-;      create with :topic/content and :topic/parent and :topic/original IDs
-;      should insert after current topic?
-;      style and link extract: use topic and topic-<uuid> classes?
 ; TODO add create question button
 ;      copy selected text as question, cloze, or answer
 ; TODO add 'Split' button

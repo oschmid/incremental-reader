@@ -30,3 +30,14 @@
   (is (= "02349" (:topic/content (db/topic @!conn uuid2))))
   (is (thrown? IllegalArgumentException (d/transact! !conn [[:db.fn/call topic/delete-from-topic uuid1 (hash "bad") [[0 5]]]]))))
 
+(def uuid3 (java.util.UUID/randomUUID))
+(d/transact! !conn [[:db.fn/call db/add-topic "testUserID"
+                     {:topic/uuid uuid3 :topic/content "before extract after"}]])
+(d/transact! !conn [[:db.fn/call topic/extract-from-topic "testUserID" uuid3 (hash "before extract after") [[7 14]]]])
+
+(deftest extract-from-topic-test
+  ; TODO: test parent modified
+  ; TODO: test child created (query for newest topic?)
+  ; TODO: test queue modified
+  (is (= true true)))
+

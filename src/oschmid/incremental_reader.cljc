@@ -78,7 +78,7 @@
          [topic qsize] (e/server (first-topic db userID))]
      (Import-Field. userID)
      (if (some? topic)
-       (dom/div (TopicReader. topic)
+       (dom/div (TopicReader. userID topic)
                 (dom/div
                  (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-topic userID (:topic/uuid topic)]])))) (dom/text "Delete Topic"))
                         ; TODO add delete confirmation popup, or Undo functionality for whole app
