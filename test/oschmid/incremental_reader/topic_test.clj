@@ -45,7 +45,7 @@
           _ (d/transact! !conn [[:db.fn/call topic/extract-from-topic "testUserID3" uuid3 (hash "before extract after") [[7 14]]]])
           queue (db/queue @!conn "testUserID3")
           child-uuid (second-uuid queue)
-          parent-content (str "before <a class=\"topic\" data-id=\"" (.toString child-uuid) "\">[[...]]</a> after")
+          parent-content (str "before <a class=\"topic\" data-id=\"" (.toString child-uuid) "\" href=\"#\">[[...]]</a> after")
           parent (db/topic @!conn uuid3)]
       (is (= {:topic/uuid (q/bytes->uuid queue) :topic/content parent-content :topic/content-hash (hash parent-content)} (dissoc parent :db/id :topic/created)))
       (is (= {:topic/uuid child-uuid :topic/content "extract" :topic/content-hash (hash "extract") :topic/parent (:db/id parent)} (dissoc (db/topic @!conn child-uuid) :db/id :topic/created)))))
@@ -55,7 +55,7 @@
           _ (d/transact! !conn [[:db.fn/call topic/extract-from-topic "testUserID4" uuid4 (hash "extract after") [[0 7]]]])
           queue (db/queue @!conn "testUserID4")
           child-uuid (second-uuid queue)
-          parent-content (str "<a class=\"topic\" data-id=\"" (.toString child-uuid) "\">[[...]]</a> after")
+          parent-content (str "<a class=\"topic\" data-id=\"" (.toString child-uuid) "\" href=\"#\">[[...]]</a> after")
           parent (db/topic @!conn uuid4)]
       (is (= {:topic/uuid (q/bytes->uuid queue) :topic/content parent-content :topic/content-hash (hash parent-content)} (dissoc parent :db/id :topic/created)))
       (is (= {:topic/uuid child-uuid :topic/content "extract" :topic/content-hash (hash "extract") :topic/parent (:db/id parent)} (dissoc (db/topic @!conn child-uuid) :db/id :topic/created)))))
@@ -65,7 +65,7 @@
           _ (d/transact! !conn [[:db.fn/call topic/extract-from-topic "testUserID5" uuid5 (hash "before extract") [[7 14]]]])
           queue (db/queue @!conn "testUserID5")
           child-uuid (second-uuid queue)
-          parent-content (str "before <a class=\"topic\" data-id=\"" (.toString child-uuid) "\">[[...]]</a>")
+          parent-content (str "before <a class=\"topic\" data-id=\"" (.toString child-uuid) "\" href=\"#\">[[...]]</a>")
           parent (db/topic @!conn uuid5)]
       (is (= {:topic/uuid (q/bytes->uuid queue) :topic/content parent-content :topic/content-hash (hash parent-content)} (dissoc parent :db/id :topic/created)))
       (is (= {:topic/uuid child-uuid :topic/content "extract" :topic/content-hash (hash "extract") :topic/parent (:db/id parent)} (dissoc (db/topic @!conn child-uuid) :db/id :topic/created))))))

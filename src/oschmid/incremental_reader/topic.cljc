@@ -8,6 +8,7 @@
                       [datascript.core :as d]]
                 :cljs [["react-dom/client" :as ReactDom]
                        ["@tiptap/core" :refer (isTextSelection)]
+                       ["@tiptap/extension-link" :refer (Link)]
                        ["@tiptap/react" :refer (BubbleMenu EditorContent useEditor)]
                        ["@tiptap/starter-kit" :refer (StarterKit)]
                        [reagent.core :as r]])
@@ -63,7 +64,7 @@
           (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic db uuid)]
             (check-content-hash user-content-hash db-content-hash)
             (let [child-uuid (java.util.UUID/randomUUID)
-                  link (str "<a class=\"topic\" data-id=\"" (.toString child-uuid) "\">[[...]]</a>")
+                  link (str "<a class=\"topic\" data-id=\"" (.toString child-uuid) "\" href=\"#\">[[...]]</a>")
                   size (count content)
                   new-content (->> (complement-ranges ranges size)
                                    (#(if (zero? (ffirst %)) % (cons [0 0] %)))
@@ -71,7 +72,7 @@
                                    (map (fn [[from to]] (subs content from to)))
                                    (join link))
                   child-content (->> ranges (map (fn [[from to]] (subs content from to))) (join "\n\n"))]
-              ; TODO: handle extract containing existing link(s)
+              ; TODO handle extract containing existing link(s)
               ;   e.g. A is parent to B, X is new extract of A containing link to B. A becomes parent to X, X becomes parent to B.
               ;   Look for links in `child-content`, update the parent of those topics to point to `child-uuid`
               [{:db/id e
@@ -100,10 +101,7 @@
            [(dec (.. r -$from -pos)) (dec (.. r -$to -pos))]))
 
 #?(:cljs (defn topic-reader [content onEvent]
-           (when-let [editor (useEditor (clj->js {:content content :editable false :extensions [StarterKit] :parseOptions {:preserveWhitespace "full"}}))]
-               ; TODO: create a custom node:  <topic uuid=":topic/uuid"/> (https://tiptap.dev/guide/custom-extensions#create-a-node)
-               ;       render something like: <a class="topic" href="#:topic/uuid">:topic/title</a>
-               ;       how to show linked :topic/title without duplicating it in parent :topic/content?
+           (when-let [editor (useEditor (clj->js {:content content :editable false :extensions [StarterKit Link] :parseOptions {:preserveWhitespace "full"}}))]
              (when-not (= (. editor getText) content)
                ((.. editor -commands -setContent) content false (clj->js {:preserveWhitespace "full"})))
              [:<> ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)

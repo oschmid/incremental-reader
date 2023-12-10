@@ -6,6 +6,7 @@
     "shadow-cljs": "~2.22.10"
   },
   "dependencies": {
+    "@tiptap/extension-link": "^2.1.13",
     "@tiptap/pm": "^2.1.12",
     "@tiptap/react": "^2.1.12",
     "@tiptap/starter-kit": "^2.1.12",
