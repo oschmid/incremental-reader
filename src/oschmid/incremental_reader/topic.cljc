@@ -60,11 +60,14 @@
                                    (apply str))]
               [{:db/id e :topic/content new-content :topic/content-hash (hash new-content)}]))))
 
+#?(:clj (defn topic-link [uuid]
+          (str "<a class=\"topic\" data-id=\"" (.toString uuid) "\" href=\"#\">[[...]]</a>")))
+
 #?(:clj (defn extract-from-topic [db userID uuid user-content-hash ranges]
           (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic db uuid)]
             (check-content-hash user-content-hash db-content-hash)
             (let [child-uuid (java.util.UUID/randomUUID)
-                  link (str "<a class=\"topic\" data-id=\"" (.toString child-uuid) "\" href=\"#\">[[...]]</a>")
+                  link (topic-link child-uuid)
                   size (count content)
                   new-content (->> (complement-ranges ranges size)
                                    (#(if (zero? (ffirst %)) % (cons [0 0] %)))
