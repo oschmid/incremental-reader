@@ -11,6 +11,7 @@
                        ["@tiptap/extension-link" :refer (Link)]
                        ["@tiptap/react" :refer (BubbleMenu EditorContent useEditor)]
                        ["@tiptap/starter-kit" :refer (StarterKit)]
+                       [react :as react]
                        [reagent.core :as r]])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
@@ -104,15 +105,21 @@
            [(dec (.. r -$from -pos)) (dec (.. r -$to -pos))]))
 
 #?(:cljs (defn topic-reader [content onEvent]
-           (when-let [editor (useEditor (clj->js {:content content :editable false :extensions [StarterKit Link] :parseOptions {:preserveWhitespace "full"}}))]
-             (when-not (= (. editor getText) content)
-               ((.. editor -commands -setContent) content false (clj->js {:preserveWhitespace "full"})))
-             [:<> ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
-              [:> EditorContent {:editor editor}]
-              [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO replace with a bottom FloatingMenu so as not to be hidden by mobile text selection menus
-               [:button {:onClick #(onEvent :delete [[0 (dec (min (.. editor -state -selection -$anchor -pos) (.. editor -state -selection -$head -pos)))]])} "Delete Before"]
-               [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
-               [:button {:onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]]])))
+           (let [editor (useEditor (clj->js {:content content :editable false :extensions [StarterKit Link] :parseOptions {:preserveWhitespace "full"}}))
+                 [expected-content set-expected-content] (react/useState nil)]
+             (when (some? editor)
+               (if-not (= content expected-content)
+                 (do
+                   ((.. editor -commands -setContent) content false (clj->js {:preserveWhitespace "full"}))
+                   (set-expected-content content))
+                 (if-not (= (. editor getText) expected-content)
+                   "schema has blocked content"
+                   [:div ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
+                    [:> EditorContent {:editor editor}]
+                    [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO replace with a bottom FloatingMenu so as not to be hidden by mobile text selection menus
+                     [:button {:onClick #(onEvent :delete [[0 (dec (min (.. editor -state -selection -$anchor -pos) (.. editor -state -selection -$head -pos)))]])} "Delete Before"]
+                     [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
+                     [:button {:onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]]]))))))
 
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
            [:f> topic-reader content onEvent]))
