@@ -11,6 +11,8 @@
                        ["@tiptap/extension-link" :refer (Link)]
                        ["@tiptap/react" :refer (BubbleMenu EditorContent useEditor)]
                        ["@tiptap/starter-kit" :refer (StarterKit)]
+                       [clojure.string :refer [split]]
+                       [hoeck.diff.lcs :refer [vec-diff]]
                        [react :as react]
                        [reagent.core :as r]])
             [hyperfiddle.electric :as e]
@@ -91,6 +93,14 @@
 
 ;;;; UI
 
+#?(:cljs (defn view-diff [expected actual]
+           (->> (vec-diff (split expected #"\n") (split actual #"\n"))
+                (map-indexed (fn [i [op line]]
+                               (case op
+                                 nil  [:div {:key i} line]
+                                 :old [:div {:key i :style {:color "red"}} (str "-" line)]
+                                 :new [:div {:key i :style {:color "green"}} (str "+" line)]))))))
+
 ; Based on the default shouldShow method except it'll work on a non-editable Editor
 ; (see https://github.com/ueberdosis/tiptap/blob/main/packages/extension-bubble-menu/src/bubble-menu-plugin.ts#L47)
 #?(:cljs (defn show-bubble-menu? [menu]
@@ -113,7 +123,10 @@
                    ((.. editor -commands -setContent) content false (clj->js {:preserveWhitespace "full"}))
                    (set-expected-content content))
                  (if-not (= (. editor getText) expected-content)
-                   "schema has blocked content"
+                   [:div
+                    [:p "Tiptap schema blocked the following content:"]
+                    [:<>
+                     (view-diff expected-content (. editor getText))]]
                    [:div ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
                     [:> EditorContent {:editor editor}]
                     [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO replace with a bottom FloatingMenu so as not to be hidden by mobile text selection menus

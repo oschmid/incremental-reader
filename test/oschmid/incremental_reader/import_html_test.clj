@@ -2,7 +2,7 @@
 
   (:require [clojure.test :refer [deftest is]]
             [oschmid.incremental-reader.import-html :as html]
-            [text-diff :refer [are-vars-eq]])
+            [text-diff :refer [are-vars-eq]]) ; TODO replace with hoeck.diff.lcs
   (:import [java.net URI]))
 
 (deftest uri-test
