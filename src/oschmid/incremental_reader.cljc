@@ -34,7 +34,6 @@
 ; TODO make a button show this as a popup
 (e/defn Import-Field "Add HTML/text (or scrape a URL) to the head of the user's queue." [userID]
   (dom/div
-   ; TODO add button to paste from clipboard? Eventually share to PWA?
    (dom/input
     (dom/props {:placeholder "Import a URL..."})
     (dom/on "keydown"
@@ -79,6 +78,5 @@
               ; TODO add sync with Ankiweb
               ; TODO add 'Read Soon' button
               ; TODO button to "Randomize" queue
-              ; TODO allow filtering of queue by tags?
        (dom/div (dom/text "Welcome!"))))))
 
