@@ -9,7 +9,7 @@
                 :cljs [["react-dom/client" :as ReactDom]
                        ["@tiptap/core" :refer (isTextSelection)]
                        ["@tiptap/extension-link" :refer (Link)]
-                       ["@tiptap/react" :refer (BubbleMenu EditorContent useEditor)]
+                       ["@tiptap/react" :refer (EditorContent useEditor)]
                        ["@tiptap/starter-kit" :refer (StarterKit)]
                        [clojure.string :refer [split]]
                        [hoeck.diff.lcs :refer [vec-diff]]
@@ -115,8 +115,17 @@
            [(dec (.. r -$from -pos)) (dec (.. r -$to -pos))]))
 
 #?(:cljs (defn topic-reader [content onEvent]
-           (let [editor (useEditor (clj->js {:content content :editable false :extensions [StarterKit Link] :parseOptions {:preserveWhitespace "full"}}))
-                 [expected-content set-expected-content] (react/useState nil)]
+           (let [[expected-content set-expected-content] (react/useState nil)
+                 [selection set-selection] (react/useState "")
+                 onSelectionUpdate (fn [e] ; TODO function not called on first click away (look into focus or document.onselectionchange events)
+                                     (let [state (.. e ^js/Editor -editor -state)
+                                           s (. (. state -doc) textBetween (.. state -selection -from) (.. state -selection -to))]
+                                       (set-selection s)))
+                 editor (useEditor (clj->js {:content content
+                                             :editable false
+                                             :extensions [StarterKit Link]
+                                             :parseOptions {:preserveWhitespace "full"}
+                                             :onSelectionUpdate onSelectionUpdate}))]
              (when (some? editor)
                (if-not (= content expected-content)
                  (do
@@ -129,10 +138,13 @@
                      (view-diff expected-content (. editor getText))]]
                    [:div ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
                     [:> EditorContent {:editor editor}]
-                    [:> BubbleMenu {:editor editor :shouldShow show-bubble-menu?} ; TODO replace with a bottom FloatingMenu so as not to be hidden by mobile text selection menus
-                     [:button {:onClick #(onEvent :delete [[0 (dec (min (.. editor -state -selection -$anchor -pos) (.. editor -state -selection -$head -pos)))]])} "Delete Before"]
-                     [:button {:onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
-                     [:button {:onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]]]))))))
+                    [:div
+                     [:button {:disabled (empty? selection)
+                               :onClick #(onEvent :delete [[0 (dec (min (.. editor -state -selection -$anchor -pos) (.. editor -state -selection -$head -pos)))]])} "Delete Before"]
+                     [:button {:disabled (empty? selection)
+                               :onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
+                     [:button {:disabled (empty? selection)
+                               :onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]]]))))))
 
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
            [:f> topic-reader content onEvent]))
