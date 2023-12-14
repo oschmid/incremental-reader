@@ -115,12 +115,13 @@
            [(dec (.. r -$from -pos)) (dec (.. r -$to -pos))]))
 
 #?(:cljs (defn topic-reader [content onEvent]
-           (let [[expected-content set-expected-content] (react/useState nil)
-                 [selection set-selection] (react/useState "")
-                 onSelectionUpdate (fn [e] ; TODO function not called on first click away (look into focus or document.onselectionchange events)
-                                     (let [state (.. e ^js/Editor -editor -state)
-                                           s (. (. state -doc) textBetween (.. state -selection -from) (.. state -selection -to))]
-                                       (set-selection s)))
+           (let [[selection set-selection] (react/useState "")
+                 onSelectionUpdate (fn [e]
+                                     (if (empty? (.. js/document getSelection toString))
+                                       (set-selection "")
+                                       (let [state ^js/EditorState (.. e ^js/Editor -editor -state)]
+                                         (set-selection ^String (. (. state -doc) textBetween (.. state -selection -from) (.. state -selection -to))))))
+                 [expected-content set-expected-content] (react/useState (fn [] (set! (. js/document -onselectionchange) onSelectionUpdate)))
                  editor (useEditor (clj->js {:content content
                                              :editable false
                                              :extensions [StarterKit Link]
