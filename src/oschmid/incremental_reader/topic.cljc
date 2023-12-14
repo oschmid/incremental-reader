@@ -64,7 +64,7 @@
               [{:db/id e :topic/content new-content :topic/content-hash (hash new-content)}]))))
 
 #?(:clj (defn topic-link [uuid]
-          (str "<a class=\"topic\" data-id=\"" (.toString uuid) "\" href=\"#\">[[...]]</a>")))
+          (str "<a class=\"topic\" href=\"#" (.toString uuid) "\">[[...]]</a>")))
 
 #?(:clj (defn extract-from-topic [db userID uuid user-content-hash ranges]
           (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic db uuid)]
@@ -124,7 +124,7 @@
                  [expected-content set-expected-content] (react/useState (fn [] (set! (. js/document -onselectionchange) onSelectionUpdate)))
                  editor (useEditor (clj->js {:content content
                                              :editable false
-                                             :extensions [StarterKit Link]
+                                             :extensions [StarterKit Link] ; TODO replace Link (which is a Mark) with an extension based on Node
                                              :parseOptions {:preserveWhitespace "full"}
                                              :onSelectionUpdate onSelectionUpdate}))]
              (when (some? editor)
