@@ -16,7 +16,7 @@
            [java.net BindException]
            [org.eclipse.jetty.server.handler.gzip GzipHandler]))
 
-(defn authenticate [username password] username) ; demo (accept-all) authentication
+(defn authenticate [username _password] username) ; demo (accept-all) authentication
 
 ;; (defn wrap-demo-authentication "A Basic Auth example. Accepts any username/password and store the username in a cookie."
 ;;   [next-handler]

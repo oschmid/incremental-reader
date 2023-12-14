@@ -17,7 +17,7 @@
                      {:topic/uuid uuid2 :topic/source "https://two.com"}]])
 
 (deftest queries
-  (testing "queue" ; TODO move to db_test
+  (testing "queue"
     (is (=seq (byte-array 0) (db/queue @!empty-conn "unknownUserID")))
     (is (=seq (concat-uuids uuid2 uuid1) (db/queue @!conn "testUserID"))))
   (testing "topic"

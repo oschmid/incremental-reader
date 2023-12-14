@@ -19,7 +19,7 @@
                                      :db/doc "HTML-formatted string"
                                      :db/cardinality :db.cardinality/one}}))
 
-; TODO add persistent DB
+; TODO add persistent DB or store as Anki IR3 notes
 #?(:clj (defonce !conn (d/create-conn schema))) ; database on server
 #?(:clj (e/def db (e/watch !conn)))
 

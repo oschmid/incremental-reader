@@ -7,7 +7,6 @@
   (:require #?@(:clj [[clojure.string :refer [join]]
                       [datascript.core :as d]]
                 :cljs [["react-dom/client" :as ReactDom]
-                       ["@tiptap/core" :refer (isTextSelection)]
                        ["@tiptap/extension-link" :refer (Link)]
                        ["@tiptap/react" :refer (EditorContent useEditor)]
                        ["@tiptap/starter-kit" :refer (StarterKit)]
@@ -100,16 +99,6 @@
                                  nil  [:div {:key i} line]
                                  :old [:div {:key i :style {:color "red"}} (str "-" line)]
                                  :new [:div {:key i :style {:color "green"}} (str "+" line)]))))))
-
-; Based on the default shouldShow method except it'll work on a non-editable Editor
-; (see https://github.com/ueberdosis/tiptap/blob/main/packages/extension-bubble-menu/src/bubble-menu-plugin.ts#L47)
-#?(:cljs (defn show-bubble-menu? [menu]
-           (let [^js/Node doc (.. menu -state -doc)
-                 from (. menu -from)
-                 to (. menu -to)
-                 selectionEmpty (.. menu -state -selection -empty)
-                 isEmptyTextBlock (and (empty? (. doc textBetween from to)) (isTextSelection (.. menu -state -selection)))]
-             (not (or selectionEmpty isEmptyTextBlock)))))
 
 #?(:cljs (defn range->vec [r]
            [(dec (.. r -$from -pos)) (dec (.. r -$to -pos))]))

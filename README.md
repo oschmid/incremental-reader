@@ -5,10 +5,19 @@ The goal is to build a mobile-first incremental reading companion to Anki. Letti
 ## Commands
 
 ```
-clj -X:test                       # Run tests
-clj -X:dev                        # Run dev mode
-clj -M:clj-kondo --lint src test  # Run linter
-clj -Tcljfmt fix                  # Run code formatter
+# Run tests
+clj -X:test
+
+# Run dev mode
+clj -X:dev
+
+# Run linter
+diff <(clj -M:clj-kondo --lint src test) <(cat clj-kondo-ignores.txt)             # bash
+diff (clj -M:clj-kondo --lint src test | psub) (cat clj-kondo-ignores.txt | psub) # fish
+clj -M:clj-kondo --lint src test | head -n -1 > clj-kondo-ignores.txt             # update ignored
+
+# Run code formatter
+clj -Tcljfmt fix
 ```
 
 ## Notes 
