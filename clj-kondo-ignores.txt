@@ -19,22 +19,3 @@ test/oschmid/incremental_reader/queue_bytes_test.clj:47:10: error: Unresolved sy
 test/oschmid/incremental_reader_test.cljc:12:13: warning: Unresolved namespace java.util.UUID. Are you missing a require?
 test/oschmid/incremental_reader_test.cljc:21:16: error: Unresolved symbol: byte-array
 test/oschmid/incremental_reader_test.cljc:45:16: error: Unresolved symbol: Exception
-test/text_diff.clj:6:7: error: Namespace name does not match file name: my-name-space
-test/text_diff.clj:7:16: warning: namespace clojure.test is required but never used
-test/text_diff.clj:7:37: warning: #'clojure.test/is is referred but never used
-test/text_diff.clj:8:16: warning: namespace text-diff is required but never used
-test/text_diff.clj:8:34: warning: #'text-diff/are-vars-eq is referred but never used
-test/text_diff.clj:12:26: error: Unresolved symbol: are-vars-eq
-test/text_diff.clj:13:6: error: Unresolved symbol: is
-test/text_diff.clj:32:14: warning: namespace clojure.test is required but never used
-test/text_diff.clj:32:35: warning: #'clojure.test/is is referred but never used
-test/text_diff.clj:112:25: warning: Unresolved namespace clojure.string. Are you missing a require?
-test/text_diff.clj:169:3: error: text-diff/plain-difference is called with 4 args but expects 3
-test/text_diff.clj:172:3: error: text-diff/plain-difference is called with 4 args but expects 3
-test/text_diff.clj:375:10: warning: unused binding error-col
-test/text_diff.clj:375:44: warning: unused binding same-col
-test/text_diff.clj:375:63: warning: unused binding whitespace-col
-test/text_diff.clj:411:24: warning: unused binding a-function
-test/text_diff.clj:478:19: warning: unused binding a-nil
-test/text_diff.clj:495:26: warning: unused binding e
-test/text_diff.clj:676:6: warning: Missing else branch.

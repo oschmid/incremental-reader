@@ -1,8 +1,9 @@
 (ns oschmid.incremental-reader.import-html-test
 
-  (:require [clojure.test :refer [deftest is]]
+  (:require [clojure.string :refer [split]]
+            [clojure.test :refer [deftest is]]
             [oschmid.incremental-reader.import-html :as html]
-            [text-diff :refer [are-vars-eq]]) ; TODO replace with hoeck.diff.lcs
+            [hoeck.diff.lcs :refer [vec-diff]])
   (:import [java.net URI]))
 
 (deftest uri-test
@@ -25,9 +26,17 @@
   (is (= (URI. "http://foo.com/hello%20world")
          (html/uri "http://foo.com/hello%20world"))))
 
+(defn diff [expected actual]
+  (->> (vec-diff (split expected #"\n") (split actual #"\n"))
+       (map (fn [[op line]]
+              (case op
+                nil ""
+                :old (str "-" line)
+                :new (str "+" line))))
+       (apply str)))
+
 (deftest clean-doc-test
-  (let [expected-value (.trim (slurp "test/oschmid/incremental_reader/pre-push-checklist-clean.html"))
-        actual-value (html/clean (slurp "test/oschmid/incremental_reader/pre-push-checklist.html"))
-        [diff-actual diff-expected] (are-vars-eq actual-value expected-value)]
-    (is (= diff-actual diff-expected))))
+  (let [expected (.trim (slurp "test/oschmid/incremental_reader/pre-push-checklist-clean.html"))
+        actual (html/clean (slurp "test/oschmid/incremental_reader/pre-push-checklist.html"))]
+    (is (empty? (diff expected actual)))))
 
