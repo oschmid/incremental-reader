@@ -6,11 +6,12 @@ src/oschmid/incremental_reader.cljc:49:50: error: Unresolved symbol: java
 src/oschmid/incremental_reader.cljc:50:47: warning: Unresolved namespace java.util.UUID. Are you missing a require?
 src/oschmid/incremental_reader.cljc:51:24: warning: Unresolved namespace d. Are you missing a require?
 src/oschmid/incremental_reader.cljc:56:43: error: Unresolved symbol: e#
-src/oschmid/incremental_reader/topic.cljc:19:58: warning: #'oschmid.incremental-reader.db/map-queue is referred but never used
-src/oschmid/incremental_reader/topic.cljc:19:68: warning: #'oschmid.incremental-reader.db/topic is referred but never used
-src/oschmid/incremental_reader/topic.cljc:20:14: warning: namespace oschmid.incremental-reader.queue-bytes is required but never used
-src/oschmid/incremental_reader/topic.cljc:147:40: warning: Unresolved namespace d. Are you missing a require?
-src/oschmid/incremental_reader/topic.cljc:150:20: error: Unresolved symbol: topic-reader-wrapper
+src/oschmid/incremental_reader/topic.cljc:18:58: warning: #'oschmid.incremental-reader.db/map-queue is referred but never used
+src/oschmid/incremental_reader/topic.cljc:18:68: warning: #'oschmid.incremental-reader.db/topic is referred but never used
+src/oschmid/incremental_reader/topic.cljc:19:14: warning: namespace oschmid.incremental-reader.queue-bytes is required but never used
+src/oschmid/incremental_reader/topic.cljc:99:21: warning: unused binding this
+src/oschmid/incremental_reader/topic.cljc:162:40: warning: Unresolved namespace d. Are you missing a require?
+src/oschmid/incremental_reader/topic.cljc:165:20: error: Unresolved symbol: topic-reader-wrapper
 src/user.clj:8:15: warning: unused binding args
 src/user.clj:12:3: warning: inline def
 src/user.clj:21:4: warning: Unresolved namespace hyperfiddle.rcf. Are you missing a require?

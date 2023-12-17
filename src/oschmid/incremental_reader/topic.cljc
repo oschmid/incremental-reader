@@ -7,8 +7,7 @@
   (:require #?@(:clj [[clojure.string :refer [join]]
                       [datascript.core :as d]]
                 :cljs [["react-dom/client" :as ReactDom]
-                       ["@tiptap/extension-link" :refer (Link)]
-                       ["@tiptap/react" :refer (EditorContent useEditor)]
+                       ["@tiptap/react" :refer (EditorContent Node useEditor)]
                        ["@tiptap/starter-kit" :refer (StarterKit)]
                        [clojure.string :refer [split]]
                        [hoeck.diff.lcs :refer [vec-diff]]
@@ -62,8 +61,12 @@
                                    (apply str))]
               [{:db/id e :topic/content new-content :topic/content-hash (hash new-content)}]))))
 
-#?(:clj (defn topic-link [uuid]
-          (str "<a class=\"topic\" href=\"#" (.toString uuid) "\">[[...]]</a>")))
+(defn topic-link [uuid]
+  (str "<a class=\"topic\" href=\"#" (str uuid) "\">[[...]]</a>"))
+
+#?(:cljs (defn try-uuid [s]
+           (when (and (some? s) (re-matches #"^#[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$" s))
+             (subs s 1))))
 
 #?(:clj (defn extract-from-topic [db userID uuid user-content-hash ranges]
           (let [{e :db/id content :topic/content db-content-hash :topic/content-hash} (topic db uuid)]
@@ -92,6 +95,18 @@
 
 ;;;; UI
 
+#?(:cljs (defn LinkNode []
+           (this-as this
+                    (.create Node (clj->js {:name "link-node"
+                                            :priority 1100
+                                            :group "inline"
+                                            :inline true
+                                            :addAttributes (fn [] (clj->js {:uuid {:default nil
+                                                                                   :parseHTML (fn [e] (try-uuid (. e getAttribute "href")))}}))
+                                            :parseHTML (fn [] (clj->js [{:tag "a"}]))
+                                            :renderHTML (fn [e] (clj->js ["a" (. e -HTMLAttributes) 0]))
+                                            :renderText (fn [e] (topic-link (.. e -node -attrs -uuid)))})))))
+
 #?(:cljs (defn view-diff [expected actual]
            (->> (vec-diff (split expected #"\n") (split actual #"\n"))
                 (map-indexed (fn [i [op line]]
@@ -113,7 +128,7 @@
                  [expected-content set-expected-content] (react/useState (fn [] (set! (. js/document -onselectionchange) onSelectionUpdate)))
                  editor (useEditor (clj->js {:content content
                                              :editable false
-                                             :extensions [StarterKit Link] ; TODO replace Link (which is a Mark) with an extension based on Node
+                                             :extensions [StarterKit (LinkNode)]
                                              :parseOptions {:preserveWhitespace "full"}
                                              :onSelectionUpdate onSelectionUpdate}))]
              (when (some? editor)
