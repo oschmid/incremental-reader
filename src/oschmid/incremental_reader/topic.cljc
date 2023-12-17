@@ -120,10 +120,10 @@
 
 #?(:cljs (defn topic-reader [content onEvent]
            (let [[selection set-selection] (react/useState "")
-                 onSelectionUpdate (fn [e]
-                                     (if (empty? (.. js/document getSelection toString))
+                 onSelectionUpdate (fn [^js/Editor e]
+                                     (if (empty? (or (.. js/document getSelection toString) e))
                                        (set-selection "")
-                                       (let [state ^js/EditorState (.. e ^js/Editor -editor -state)]
+                                       (let [state ^js/EditorState (.. e -editor -state)]
                                          (set-selection ^String (. (. state -doc) textBetween (.. state -selection -from) (.. state -selection -to))))))
                  [expected-content set-expected-content] (react/useState (fn [] (set! (. js/document -onselectionchange) onSelectionUpdate)))
                  editor (useEditor (clj->js {:content content
