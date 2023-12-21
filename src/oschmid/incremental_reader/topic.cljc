@@ -7,7 +7,9 @@
   (:require #?@(:clj [[clojure.string :refer [join]]
                       [datascript.core :as d]]
                 :cljs [["react-dom/client" :as ReactDom]
-                       ["@tiptap/react" :refer (EditorContent Node useEditor)]
+                       ["@tiptap/core" :refer (Editor)]
+                       ["@tiptap/extension-link" :refer (Link)]
+                       ["@tiptap/react" :refer (EditorContent useEditor)]
                        ["@tiptap/starter-kit" :refer (StarterKit)]
                        [clojure.string :refer [split]]
                        [hoeck.diff.lcs :refer [vec-diff]]
@@ -95,17 +97,14 @@
 
 ;;;; UI
 
-#?(:cljs (defn LinkNode []
-           (this-as this
-                    (.create Node (clj->js {:name "link-node"
-                                            :priority 1100
-                                            :group "inline"
-                                            :inline true
-                                            :addAttributes (fn [] (clj->js {:uuid {:default nil
-                                                                                   :parseHTML (fn [e] (try-uuid (. e getAttribute "href")))}}))
-                                            :parseHTML (fn [] (clj->js [{:tag "a"}]))
-                                            :renderHTML (fn [e] (clj->js ["a" (. e -HTMLAttributes) 0]))
-                                            :renderText (fn [e] (topic-link (.. e -node -attrs -uuid)))})))))
+#?(:cljs (defn extensions []
+           [StarterKit Link]))
+
+#?(:cljs (defn format-to-schema [s]
+           ; TODO use getHTMLFromFragment instead of Editor? https://github.com/ueberdosis/tiptap/blob/1378883e9ed27934816debcdc10c170d9a74cbc2/packages/core/src/Editor.ts#L428
+           (. (Editor. (clj->js {:extensions (extensions) :content s})) getHTML))
+   :clj (defn format-to-schema [s]
+          (throw (UnsupportedOperationException. "format-to-schema"))))
 
 #?(:cljs (defn view-diff [expected actual]
            (->> (vec-diff (split expected #"\n") (split actual #"\n"))
@@ -120,7 +119,7 @@
 
 #?(:cljs (defn topic-reader [content onEvent]
            (let [[selection set-selection] (react/useState "")
-                 onSelectionUpdate (fn [^js/Editor e]
+                 onSelectionUpdate (fn [^js/SelectionUpdateProps e]
                                      (if (empty? (or (.. js/document getSelection toString) e))
                                        (set-selection "")
                                        (let [state ^js/EditorState (.. e -editor -state)]
@@ -128,7 +127,7 @@
                  [expected-content set-expected-content] (react/useState (fn [] (set! (. js/document -onselectionchange) onSelectionUpdate)))
                  editor (useEditor (clj->js {:content content
                                              :editable false
-                                             :extensions [StarterKit (LinkNode)]
+                                             :extensions (extensions)
                                              :parseOptions {:preserveWhitespace "full"}
                                              :onSelectionUpdate onSelectionUpdate}))]
              (when (some? editor)
@@ -136,11 +135,11 @@
                  (do
                    ((.. editor -commands -setContent) content false (clj->js {:preserveWhitespace "full"}))
                    (set-expected-content content))
-                 (if-not (= (. editor getText) expected-content)
+                 (if-not (= (. editor getHTML) expected-content)
                    [:div
                     [:p "Tiptap schema blocked the following content:"]
                     [:<>
-                     (view-diff expected-content (. editor getText))]]
+                     (view-diff expected-content (. editor getHTML))]]
                    [:div ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
                     [:> EditorContent {:editor editor}]
                     [:div
