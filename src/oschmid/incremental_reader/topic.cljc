@@ -63,6 +63,10 @@
                                    (apply str))]
               [{:db/id e :topic/content new-content :topic/content-hash (hash new-content)}]))))
 
+#?(:clj (defn add-cloze [db uuid user-content-hash ranges]
+          ; TODO insert {{c1:: ... }} around selected text
+          []))
+
 (defn topic-link [uuid]
   (str "<a class=\"topic\" href=\"#" (str uuid) "\">[[...]]</a>"))
 
@@ -148,18 +152,22 @@
                      [:button {:disabled (empty? selection)
                                :onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
                      [:button {:disabled (empty? selection)
-                               :onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]]]))))))
+                               :onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]
+                     [:button {:disabled (empty? selection)
+                               :onClick #(onEvent :cloze (map range->vec (.. editor -state -selection -ranges)))} "Cloze"]]]))))))
+                     ; TODO add button for next cloze {{c2:: ... }}
 
 #?(:cljs (defn topic-reader-wrapper [content onEvent]
            [:f> topic-reader content onEvent]))
 
 (e/defn TopicReader [userID {uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
   (e/client
-   (let [!event (atom nil)]
+   (let [!event (atom nil)] ; TODO can events be dropped? Might want to use m/observe instead: https://hyperfiddle.github.io/#/page/Connect%20Electric%20code%20to%20a%20Javascript%20callback
      (when-let [[eventType v] (e/watch !event)]
        (case eventType
          :delete (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash v]])))
-         :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]]))))
+         :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]])))
+         :cloze (e/server (e/discard (d/transact! !conn [[:db.fn/call add-cloze uuid content-hash v]]))))
        (reset! !event nil))
      (with-reagent topic-reader-wrapper content #(reset! !event [%1 %2])))))
 ; TODO add create question button

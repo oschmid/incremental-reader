@@ -10,6 +10,7 @@
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]
+            [oschmid.incremental-reader.anki :as anki]
             [oschmid.incremental-reader.db :refer [!conn add-topic db map-queue topic queue]]
             [oschmid.incremental-reader.topic :refer [TopicReader format-to-schema]]))
 
@@ -66,6 +67,25 @@
        (::e/pending ::e/failed) (throw v#)
        (::e/init ::e/ok) v#))))
 
+(defn count-matches [re s]
+  (let [matches (re-matches re s)]
+    (if (nil? matches) 0
+        (if (string? matches) 1
+            (count matches)))))
+
+(e/defn Sync-Button [userID topic]
+  (dom/button
+   (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
+                                         (new (e/fn [] (e/server (e/discard (anki/add-cloze userID "Default" (:content topic))))))) ; TODO select Deck
+         clozes (count-matches #"\{\{c\d+::" (:content topic))
+         busy# (or (= ::e/pending state#) ; backpressure the user
+                   (> clozes 0))]
+     (dom/props {:disabled busy#, :aria-busy busy#})
+     (dom/text (if (= clozes 1) "Sync Cloze" "Sync Clozes"))
+     (case state# ; 4 colors
+       (::e/pending ::e/failed) (throw v#)
+       (::e/init ::e/ok) v#))))
+
 (e/defn Incremental-Reader []
   (e/client
    (dom/link (dom/props {:rel :stylesheet :href "/incremental-reader.css"}))
@@ -77,8 +97,8 @@
                 (dom/div
                  (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-topic userID (:topic/uuid topic)]])))) (dom/text "Delete Topic"))
                         ; TODO add delete confirmation popup, or Undo functionality for whole app
-                 (Read-Last-Button. userID qsize)))
-              ; TODO add sync with Ankiweb
+                 (Read-Last-Button. userID qsize)
+                 (Sync-Button. userID topic)))
               ; TODO add 'Read Soon' button
               ; TODO button to "Randomize" queue
        (dom/div (dom/text "Welcome!"))))))
