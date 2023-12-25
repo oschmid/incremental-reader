@@ -67,17 +67,14 @@
        (::e/pending ::e/failed) (throw v#)
        (::e/init ::e/ok) v#))))
 
-(defn count-matches [re s]
-  (let [matches (re-matches re s)]
-    (if (nil? matches) 0
-        (if (string? matches) 1
-            (count matches)))))
+#?(:cljs (defn count-clozes [s]
+           (count (re-seq #"\{\{c\d+::" s))))
 
 (e/defn Sync-Button [userID topic]
   (dom/button
    (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
                                          (new (e/fn [] (e/server (e/discard (anki/add-cloze userID "Default" (:content topic))))))) ; TODO select Deck
-         clozes (count-matches #"\{\{c\d+::" (:content topic))
+         clozes (count-clozes (:content topic))
          busy# (or (= ::e/pending state#) ; backpressure the user
                    (> clozes 0))]
      (dom/props {:disabled busy#, :aria-busy busy#})

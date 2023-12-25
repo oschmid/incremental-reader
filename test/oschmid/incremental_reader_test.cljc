@@ -50,3 +50,8 @@
   (is (= {:topic/uuid uuid2 :topic/content-hash 0 :topic/source "https://two.com"}
          (dissoc (db/topic @!deletesConn uuid2) :db/id))))
 
+(deftest count-clozes-test
+  (is (= 0 (ir/count-clozes "No Match")))
+  (is (= 1 (ir/count-clozes "One {{c1::Match}}")))
+  (is (= 2 (ir/count-clozes "{{c1::Two}} {{c22::Matches}}"))))
+
