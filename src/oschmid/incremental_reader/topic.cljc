@@ -121,13 +121,15 @@
 #?(:cljs (defn range->vec [r]
            [(dec (.. r -$from -pos)) (dec (.. r -$to -pos))]))
 
-#?(:cljs (defn topic-reader [content onEvent]
+#?(:cljs (defn topic-reader [content onSelection onEvent]
            (let [[selection set-selection] (react/useState "")
                  onSelectionUpdate (fn [^js/SelectionUpdateProps e]
-                                     (if (empty? (or (.. js/document getSelection toString) e))
-                                       (set-selection "")
+                                     (if (or (empty? (.. js/document getSelection toString)) (nil? (. e -editor)))
+                                       (do (set-selection "")
+                                           (onSelection []))
                                        (let [state ^js/EditorState (.. e -editor -state)]
-                                         (set-selection ^String (. (. state -doc) textBetween (.. state -selection -from) (.. state -selection -to))))))
+                                         (do (set-selection ^String (. (. state -doc) textBetween (.. state -selection -from) (.. state -selection -to)))
+                                             (onSelection (map range->vec (.. state -selection -ranges)))))))
                  [expected-content set-expected-content] (react/useState (fn [] (set! (. js/document -onselectionchange) onSelectionUpdate)))
                  editor (useEditor (clj->js {:content content
                                              :editable false
@@ -157,19 +159,22 @@
                                :onClick #(onEvent :cloze (map range->vec (.. editor -state -selection -ranges)))} "Cloze"]]]))))))
                      ; TODO add button for next cloze {{c2:: ... }}
 
-#?(:cljs (defn topic-reader-wrapper [content onEvent]
-           [:f> topic-reader content onEvent]))
+#?(:cljs (defn topic-reader-wrapper [content onSelection onEvent]
+           [:f> topic-reader content onSelection onEvent]))
 
 (e/defn TopicReader [userID {uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
   (e/client
-   (let [!event (atom nil)] ; TODO can events be dropped? Might want to use m/observe instead: https://hyperfiddle.github.io/#/page/Connect%20Electric%20code%20to%20a%20Javascript%20callback
+   (let [!selections (atom []) ; TODO: make this an arg, created in caller
+         selections (e/watch !selections)
+         !event (atom nil)] ; TODO can events be dropped? Might want to use m/observe instead: https://hyperfiddle.github.io/#/page/Connect%20Electric%20code%20to%20a%20Javascript%20callback
+     (prn selections)
      (when-let [[eventType v] (e/watch !event)]
        (case eventType
          :delete (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash v]])))
          :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]])))
          :cloze (e/server (e/discard (d/transact! !conn [[:db.fn/call add-cloze uuid content-hash v]]))))
        (reset! !event nil))
-     (with-reagent topic-reader-wrapper content #(reset! !event [%1 %2])))))
+     (with-reagent topic-reader-wrapper content #(reset! !selections %) #(reset! !event [%1 %2])))))
 ; TODO add create question button
 ;      copy selected text as question, cloze, or answer
 ; TODO add 'Split' button
