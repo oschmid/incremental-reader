@@ -2,4 +2,5 @@
            hyperfiddle.electric/defn clojure.core/defn
            hyperfiddle.electric/for  clojure.core/for
            hyperfiddle.electric/fn   clojure.core/fn}
- :linters {:redundant-expression {:level :off}}}
+ :linters {:redundant-expression {:level :off}}
+ :skip-comments true}

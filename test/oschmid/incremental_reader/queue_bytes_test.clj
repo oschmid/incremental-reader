@@ -44,6 +44,7 @@
   (is (thrown? java.nio.BufferUnderflowException (bytes->uuid (byte-array 0))))
   (is (thrown? NullPointerException (uuid->bytes nil))))
 
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (defspec uuid-bytes-conversion 10
   (prop/for-all [uuid gen-uuid]
                 (= uuid (bytes->uuid (uuid->bytes uuid)))))

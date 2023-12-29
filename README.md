@@ -12,9 +12,7 @@ clj -X:test
 clj -X:dev
 
 # Run linter
-diff <(clj -M:clj-kondo --lint src test) <(cat clj-kondo-ignores.txt)             # bash
-diff (clj -M:clj-kondo --lint src test | psub) (cat clj-kondo-ignores.txt | psub) # fish
-clj -M:clj-kondo --lint src test | head -n -1 > clj-kondo-ignores.txt             # update ignored
+clj -M:clj-kondo --lint src test
 
 # Run code formatter
 clj -Tcljfmt fix

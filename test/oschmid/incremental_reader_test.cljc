@@ -9,6 +9,7 @@
 (def !empty-conn (d/create-conn db/schema))
 
 (def !conn (d/create-conn db/schema))
+#_{:clj-kondo/ignore [:unresolved-namespace]}
 (def uuid1 (java.util.UUID/randomUUID))
 (def uuid2 (java.util.UUID/randomUUID))
 (d/transact! !conn [[:db.fn/call db/add-topic "testUserID"
@@ -18,7 +19,7 @@
 
 (deftest queries
   (testing "queue"
-    (is (=seq (byte-array 0) (db/queue @!empty-conn "unknownUserID")))
+    (is (=seq #_{:clj-kondo/ignore [:unresolved-symbol]} (byte-array 0) (db/queue @!empty-conn "unknownUserID")))
     (is (=seq (concat-uuids uuid2 uuid1) (db/queue @!conn "testUserID"))))
   (testing "topic"
     (is (= nil (db/topic @!empty-conn (java.util.UUID/randomUUID))))
@@ -42,7 +43,7 @@
 (d/transact! !deletesConn [[:db.fn/call ir/delete-topic "testUserID" (java.util.UUID/randomUUID)]])
 
 (deftest delete-topic
-  (is (thrown? Exception (d/transact! !deletesConn [[:db.fn/call ir/delete-topic "unknownUserID" uuid1]])))
+  (is (thrown? #_{:clj-kondo/ignore [:unresolved-symbol]} Exception (d/transact! !deletesConn [[:db.fn/call ir/delete-topic "unknownUserID" uuid1]])))
   (is (=seq (concat-uuids uuid2 uuid1) (db/queue @!deletesConn "testUserID")))
   (is (= nil (db/topic @!deletesConn uuidDeleted)))
   (is (= {:topic/uuid uuid1 :topic/content-hash 0 :topic/source "https://one.com"}

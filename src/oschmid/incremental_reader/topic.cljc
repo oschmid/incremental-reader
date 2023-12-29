@@ -8,8 +8,10 @@
                       [datascript.core :as d]])
             [hyperfiddle.electric :as e]
             [hyperfiddle.electric-dom2 :as dom]
+            #_{:clj-kondo/ignore [:unused-referred-var]}
             [oschmid.incremental-reader.db :refer [!conn map-queue topic]]
             [oschmid.incremental-reader.editor :refer [HTMLReader]]
+            #_{:clj-kondo/ignore [:unused-namespace]}
             [oschmid.incremental-reader.queue-bytes :as q]))
 
 ;;;; DB transactions
@@ -73,6 +75,7 @@
 
 (e/defn Button [label disabled on-click]
   (dom/button
+   #_{:clj-kondo/ignore [:unresolved-symbol]}
    (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
                                          (new on-click))
          busy# (or (= ::e/pending state#) ; backpressure the user
@@ -90,6 +93,7 @@
      (dom/div
       (HTMLReader. content !selections)
       (dom/div
+       #_{:clj-kondo/ignore [:unresolved-namespace]}
        (Button. "Delete Before" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash [[0 (dec (apply min (map last selections)))]]]])))))
        (Button. "Delete" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash selections]])))))
        (Button. "Extract" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash selections]])))))

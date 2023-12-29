@@ -1,8 +1,7 @@
 (ns oschmid.incremental-reader.anki
 
   #?(:clj (:require [clj-http.client :as http]
-                    [clojure.data.json :as json]))
-  #?(:clj (:import [java.util.concurrent TimeoutException TimeUnit])))
+                    [clojure.data.json :as json])))
 
 #?(:clj (def API_URL "http://localhost:8765"))
 #?(:clj (def API_VERSION 6))

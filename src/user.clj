@@ -5,10 +5,11 @@
 (def shadow-start! (delay @(requiring-resolve 'shadow.cljs.devtools.server/start!)))
 (def shadow-watch (delay @(requiring-resolve 'shadow.cljs.devtools.api/watch)))
 
-(defn main [& args]
+(defn main [& _]
   (println "Starting Electric compiler and server...")
   (@shadow-start!) ; serves index.html as well
   (@shadow-watch :dev) ; depends on shadow server
+  #_{:clj-kondo/ignore [:inline-def]}
   (def server (@start-electric-server! {:host "0.0.0.0"}))
   (comment (.stop server)))
 

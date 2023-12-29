@@ -11,6 +11,7 @@
             [hyperfiddle.electric-dom2 :as dom]
             [hyperfiddle.electric-ui4 :as ui]
             [oschmid.incremental-reader.anki :as anki]
+            #_{:clj-kondo/ignore [:unused-referred-var]}
             [oschmid.incremental-reader.db :refer [!conn add-topic db map-queue topic queue]]
             [oschmid.incremental-reader.editor :refer [format-to-schema]]
             [oschmid.incremental-reader.topic :refer [TopicReader]]))
@@ -48,6 +49,7 @@
                   (dom/style {:background-color "#e5e7e9" :disabled true})
                   (e/server
                    (e/discard
+                    #_{:clj-kondo/ignore [:unresolved-namespace :unresolved-symbol]}
                     (let [source (html/uri v)
                           scraped (if (some? source) (html/scrape v) (html/clean v))
                           formatted (e/client (format-to-schema scraped))
@@ -62,7 +64,7 @@
 
 (e/defn Button [label disabled on-click]
   (dom/button
-   (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
+   (let [[state# v#] (e/do-event-pending [#_{:clj-kondo/ignore [:unresolved-symbol]} e# (e/listen> dom/node "click")]
                                          (new on-click))
          busy# (or (= ::e/pending state#) ; backpressure the user
                    disabled)]

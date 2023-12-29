@@ -43,6 +43,7 @@
 #?(:cljs (defn extensions []
            [StarterKit Link]))
 
+#_{:clj-kondo/ignore [:unused-binding]}
 (defn format-to-schema [s]
   #?(:cljs (. (Editor. (clj->js {:extensions (extensions) :content s})) getHTML)
      :clj (throw (UnsupportedOperationException. "format-to-schema"))))
@@ -86,4 +87,4 @@
            [:f> html-reader content onSelection]))
 
 (e/defn HTMLReader [content !selections]
-  (e/client (with-reagent html-reader-wrapper content #(reset! !selections %))))
+  (e/client (with-reagent #_{:clj-kondo/ignore [:unresolved-symbol]} html-reader-wrapper content #(reset! !selections %))))
