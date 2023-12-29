@@ -14,13 +14,15 @@
             [oschmid.incremental-reader.db :refer [!conn add-topic db map-queue topic queue]]
             [oschmid.incremental-reader.topic :refer [TopicReader format-to-schema]]))
 
+(defn empty->nil [s]
+  (if (= s "") nil s))
+
+;;;; DB transactions
+
 #?(:clj (defn first-topic "First topic and queue size" [db userID]
           (let [q (queue db userID)]
             [(if (empty? q) nil (topic db (q/bytes->uuid q)))
              (q/size q)])))
-
-(defn empty->nil [s]
-  (if (= s "") nil s))
 
 #?(:clj (defn delete-topic "Delete topic from a user's queue" [db userID uuid]
           (if-let [e (ffirst (d/q '[:find ?e :in $ ?uuid
@@ -31,6 +33,8 @@
 
 #?(:clj (defn read-last "Move topic from first to last in a user's queue" [db userID]
           [(map-queue db userID q/move-first-uuid-to-last)]))
+
+;;;; UI
 
 ; TODO make a button show this as a popup
 (e/defn Import-Field "Add HTML/text (or scrape a URL) to the head of the user's queue." [userID]
@@ -54,18 +58,6 @@
                                  :topic/uuid (java.util.UUID/randomUUID)}]
                       (d/transact! !conn [[:db.fn/call add-topic userID (if (some? source) (assoc topic :topic/source source) topic)]]))))
                   (set! (.-value dom/node) ""))))))))
-
-(e/defn Read-Last-Button [userID qsize]
-  (dom/button
-   (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
-                                         (new (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call read-last userID]]))))))
-         busy# (or (= ::e/pending state#) ; backpressure the user
-                   (<= qsize 1))]
-     (dom/props {:disabled busy#, :aria-busy busy#})
-     (dom/text "Read Last")
-     (case state# ; 4 colors
-       (::e/pending ::e/failed) (throw v#)
-       (::e/init ::e/ok) v#))))
 
 #?(:cljs (defn count-clozes [s]
            (count (re-seq #"\{\{c\d+::" s))))
@@ -93,7 +85,7 @@
                 (dom/div
                  (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-topic userID (:topic/uuid topic)]])))) (dom/text "Delete Topic"))
                         ; TODO add delete confirmation popup, or Undo functionality for whole app
-                 (Read-Last-Button. userID qsize)
+                 (Button. "Read Last" (<= qsize 1) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call read-last userID]])))))
                  (let [clozes (count-clozes (:topic/content topic))]
                    (Button. (if (= clozes 1) "Sync Cloze" "Sync Clozes")
                             (> clozes 0)
@@ -101,4 +93,3 @@
               ; TODO add 'Read Soon' button
               ; TODO button to "Randomize" queue
        (dom/div (dom/text "Welcome!"))))))
-
