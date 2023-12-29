@@ -59,8 +59,8 @@
                       (d/transact! !conn [[:db.fn/call add-topic userID (if (some? source) (assoc topic :topic/source source) topic)]]))))
                   (set! (.-value dom/node) ""))))))))
 
-#?(:cljs (defn count-clozes [s]
-           (count (re-seq #"\{\{c\d+::" s))))
+(defn count-clozes [s]
+  (count (re-seq #"\{\{c\d+::" s)))
 
 (e/defn Button [label disabled on-click]
   (dom/button
