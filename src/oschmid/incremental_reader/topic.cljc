@@ -147,7 +147,7 @@
 #?(:cljs (defn topic-reader-wrapper [content onSelection]
            [:f> topic-reader content onSelection]))
 
-(e/defn Button [label disabled on-click] ; TODO copy and reuse
+(e/defn Button [label disabled on-click]
   (dom/button
    (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
                                          (new on-click))

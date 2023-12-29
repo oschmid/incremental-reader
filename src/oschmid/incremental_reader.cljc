@@ -70,15 +70,14 @@
 #?(:cljs (defn count-clozes [s]
            (count (re-seq #"\{\{c\d+::" s))))
 
-(e/defn Sync-Button [userID topic]
+(e/defn Button [label disabled on-click]
   (dom/button
    (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
-                                         (new (e/fn [] (e/server (e/discard (anki/add-cloze userID "Default" (:content topic))))))) ; TODO select Deck
-         clozes (count-clozes (:content topic))
+                                         (new on-click))
          busy# (or (= ::e/pending state#) ; backpressure the user
-                   (> clozes 0))]
+                   disabled)]
      (dom/props {:disabled busy#, :aria-busy busy#})
-     (dom/text (if (= clozes 1) "Sync Cloze" "Sync Clozes"))
+     (dom/text label)
      (case state# ; 4 colors
        (::e/pending ::e/failed) (throw v#)
        (::e/init ::e/ok) v#))))
@@ -95,7 +94,10 @@
                  (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-topic userID (:topic/uuid topic)]])))) (dom/text "Delete Topic"))
                         ; TODO add delete confirmation popup, or Undo functionality for whole app
                  (Read-Last-Button. userID qsize)
-                 (Sync-Button. userID topic)))
+                 (let [clozes (count-clozes (:topic/content topic))]
+                   (Button. (if (= clozes 1) "Sync Cloze" "Sync Clozes")
+                            (> clozes 0)
+                            (e/fn [] (e/server (e/discard (anki/add-cloze userID "Default" (:topic/content topic)))))))))
               ; TODO add 'Read Soon' button
               ; TODO button to "Randomize" queue
        (dom/div (dom/text "Welcome!"))))))
