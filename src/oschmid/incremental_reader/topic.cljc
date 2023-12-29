@@ -104,11 +104,10 @@
 #?(:cljs (defn extensions []
            [StarterKit Link]))
 
-#?(:cljs (defn format-to-schema [s]
-           ; TODO use getHTMLFromFragment instead of Editor? https://github.com/ueberdosis/tiptap/blob/1378883e9ed27934816debcdc10c170d9a74cbc2/packages/core/src/Editor.ts#L428
-           (. (Editor. (clj->js {:extensions (extensions) :content s})) getHTML))
-   :clj (defn format-to-schema [s]
-          (throw (UnsupportedOperationException. "format-to-schema"))))
+(defn format-to-schema [s]
+  ; TODO use getHTMLFromFragment instead of Editor? https://github.com/ueberdosis/tiptap/blob/1378883e9ed27934816debcdc10c170d9a74cbc2/packages/core/src/Editor.ts#L428
+  #?(:cljs (. (Editor. (clj->js {:extensions (extensions) :content s})) getHTML)
+     :clj (throw (UnsupportedOperationException. "format-to-schema"))))
 
 #?(:cljs (defn view-diff [expected actual]
            (->> (vec-diff (split expected #"\n") (split actual #"\n"))
@@ -150,8 +149,6 @@
                     [:> EditorContent {:editor editor}]
                     [:div
                      [:button {:disabled (empty? selection)
-                               :onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
-                     [:button {:disabled (empty? selection)
                                :onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]
                      [:button {:disabled (empty? selection)
                                :onClick #(onEvent :cloze (map range->vec (.. editor -state -selection -ranges)))} "Cloze"]]]))))))
@@ -180,14 +177,14 @@
      (prn selections)
      (when-let [[eventType v] (e/watch !event)]
        (case eventType
-         :delete (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash v]])))
          :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]])))
          :cloze (e/server (e/discard (d/transact! !conn [[:db.fn/call add-cloze uuid content-hash v]]))))
        (reset! !event nil))
      (dom/div
       (with-reagent topic-reader-wrapper content #(reset! !selections %) #(reset! !event [%1 %2]))
       (dom/div
-       (Button. "Delete Before" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash [[0 (dec (apply min (map last selections)))]]]]))))))))))
+       (Button. "Delete Before" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash [[0 (dec (apply min (map last selections)))]]]])))))
+       (Button. "Delete" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash selections]]))))))))))
 ; TODO add create question button
 ;      copy selected text as question, cloze, or answer
 ; TODO add 'Split' button
