@@ -12,7 +12,8 @@
             [hyperfiddle.electric-ui4 :as ui]
             [oschmid.incremental-reader.anki :as anki]
             [oschmid.incremental-reader.db :refer [!conn add-topic db map-queue topic queue]]
-            [oschmid.incremental-reader.topic :refer [TopicReader format-to-schema]]))
+            [oschmid.incremental-reader.editor :refer [format-to-schema]]
+            [oschmid.incremental-reader.topic :refer [TopicReader]]))
 
 (defn empty->nil [s]
   (if (= s "") nil s))
