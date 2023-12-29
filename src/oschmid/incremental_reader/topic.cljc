@@ -149,8 +149,6 @@
                     [:> EditorContent {:editor editor}]
                     [:div
                      [:button {:disabled (empty? selection)
-                               :onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]
-                     [:button {:disabled (empty? selection)
                                :onClick #(onEvent :cloze (map range->vec (.. editor -state -selection -ranges)))} "Cloze"]]]))))))
                      ; TODO add button for next cloze {{c2:: ... }}
 
@@ -177,14 +175,14 @@
      (prn selections)
      (when-let [[eventType v] (e/watch !event)]
        (case eventType
-         :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]])))
          :cloze (e/server (e/discard (d/transact! !conn [[:db.fn/call add-cloze uuid content-hash v]]))))
        (reset! !event nil))
      (dom/div
       (with-reagent topic-reader-wrapper content #(reset! !selections %) #(reset! !event [%1 %2]))
       (dom/div
        (Button. "Delete Before" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash [[0 (dec (apply min (map last selections)))]]]])))))
-       (Button. "Delete" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash selections]]))))))))))
+       (Button. "Delete" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash selections]])))))
+       (Button. "Extract" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash selections]]))))))))))
 ; TODO add create question button
 ;      copy selected text as question, cloze, or answer
 ; TODO add 'Split' button
