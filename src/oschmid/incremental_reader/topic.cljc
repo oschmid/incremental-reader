@@ -120,15 +120,12 @@
 #?(:cljs (defn range->vec [r]
            [(dec (.. r -$from -pos)) (dec (.. r -$to -pos))]))
 
-#?(:cljs (defn topic-reader [content onSelection onEvent]
-           (let [[selection set-selection] (react/useState "")
-                 onSelectionUpdate (fn [^js/SelectionUpdateProps e]
+#?(:cljs (defn topic-reader [content onSelection]
+           (let [onSelectionUpdate (fn [^js/SelectionUpdateProps e]
                                      (if (or (empty? (.. js/document getSelection toString)) (nil? (. e -editor)))
-                                       (do (set-selection "")
-                                           (onSelection []))
+                                       (onSelection [])
                                        (let [state ^js/EditorState (.. e -editor -state)]
-                                         (do (set-selection ^String (. (. state -doc) textBetween (.. state -selection -from) (.. state -selection -to)))
-                                             (onSelection (map range->vec (.. state -selection -ranges)))))))
+                                         (onSelection (map range->vec (.. state -selection -ranges))))))
                  [expected-content set-expected-content] (react/useState (fn [] (set! (. js/document -onselectionchange) onSelectionUpdate)))
                  editor (useEditor (clj->js {:content content
                                              :editable false
@@ -145,17 +142,12 @@
                     [:p "Tiptap schema blocked the following content:"]
                     [:<>
                      (view-diff expected-content (. editor getHTML))]]
-                   [:div ; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
-                    [:> EditorContent {:editor editor}]
-                    [:div
-                     [:button {:disabled (empty? selection)
-                               :onClick #(onEvent :cloze (map range->vec (.. editor -state -selection -ranges)))} "Cloze"]]]))))))
-                     ; TODO add button for next cloze {{c2:: ... }}
+                   [:> EditorContent {:editor editor}]))))))
 
-#?(:cljs (defn topic-reader-wrapper [content onSelection onEvent]
-           [:f> topic-reader content onSelection onEvent]))
+#?(:cljs (defn topic-reader-wrapper [content onSelection]
+           [:f> topic-reader content onSelection]))
 
-(e/defn Button [label disabled on-click] ; TODO pull out and reuse
+(e/defn Button [label disabled on-click] ; TODO copy and reuse
   (dom/button
    (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
                                          (new on-click))
@@ -169,22 +161,19 @@
 
 (e/defn TopicReader [userID {uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
   (e/client
-   (let [!selections (atom []) ; TODO: make this an arg, created in caller
-         selections (e/watch !selections)
-         !event (atom nil)] ; TODO can events be dropped? Might want to use m/observe instead: https://hyperfiddle.github.io/#/page/Connect%20Electric%20code%20to%20a%20Javascript%20callback
-     (prn selections)
-     (when-let [[eventType v] (e/watch !event)]
-       (case eventType
-         :cloze (e/server (e/discard (d/transact! !conn [[:db.fn/call add-cloze uuid content-hash v]]))))
-       (reset! !event nil))
+   (let [!selections (atom [])
+         selections (e/watch !selections)]
      (dom/div
-      (with-reagent topic-reader-wrapper content #(reset! !selections %) #(reset! !event [%1 %2]))
+      (with-reagent topic-reader-wrapper content #(reset! !selections %))
       (dom/div
        (Button. "Delete Before" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash [[0 (dec (apply min (map last selections)))]]]])))))
        (Button. "Delete" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash selections]])))))
-       (Button. "Extract" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash selections]]))))))))))
+       (Button. "Extract" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash selections]])))))
+       (Button. "Cloze" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call add-cloze uuid content-hash selections]]))))))))))
+; TODO add button for next cloze {{c2:: ... }}
 ; TODO add create question button
-;      copy selected text as question, cloze, or answer
+; TODO copy selected text as question, cloze, or answer
+; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
 ; TODO add 'Split' button
 ; TODO swipe word left to hide everything up to then, swipe right to extract? (Serves same purpose as bookmarks)
 ; TODO if it has :topic/source - add button to 'View Original' in a new tab (highlight topic text on page like search engines do using a fragment)
