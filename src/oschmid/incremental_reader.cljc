@@ -37,7 +37,6 @@
 
 ;;;; UI
 
-; TODO make a button show this as a popup
 (e/defn Import-Field "Add HTML/text (or scrape a URL) to the head of the user's queue." [userID]
   (dom/div
    (dom/input
@@ -52,8 +51,6 @@
                     (let [source (html/uri v)
                           scraped (if (some? source) (html/scrape v) (html/clean v))
                           formatted (e/client (format-to-schema scraped))
-                          ; TODO don't trust clientside text: content (html/clean formatted (if (some? source) v "localhost"))
-                          ; TODO import page title, use first 50 chars if pasted
                           topic {:topic/content formatted
                                  :topic/created (java.util.Date.)
                                  :topic/uuid (java.util.UUID/randomUUID)}]
@@ -85,12 +82,9 @@
        (dom/div (TopicReader. userID topic)
                 (dom/div
                  (ui/button (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-topic userID (:topic/uuid topic)]])))) (dom/text "Delete Topic"))
-                        ; TODO add delete confirmation popup, or Undo functionality for whole app
                  (Button. "Read Last" (<= qsize 1) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call read-last userID]])))))
                  (let [clozes (count-clozes (:topic/content topic))]
                    (Button. (if (= clozes 1) "Sync Cloze" "Sync Clozes")
                             (> clozes 0)
                             (e/fn [] (e/server (e/discard (anki/add-cloze userID "Default" (:topic/content topic)))))))))
-              ; TODO add 'Read Soon' button
-              ; TODO button to "Randomize" queue
        (dom/div (dom/text "Welcome!"))))))

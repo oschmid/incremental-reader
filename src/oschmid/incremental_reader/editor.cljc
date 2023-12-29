@@ -44,7 +44,6 @@
            [StarterKit Link]))
 
 (defn format-to-schema [s]
-  ; TODO use getHTMLFromFragment instead of Editor? https://github.com/ueberdosis/tiptap/blob/1378883e9ed27934816debcdc10c170d9a74cbc2/packages/core/src/Editor.ts#L428
   #?(:cljs (. (Editor. (clj->js {:extensions (extensions) :content s})) getHTML)
      :clj (throw (UnsupportedOperationException. "format-to-schema"))))
 

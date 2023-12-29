@@ -19,7 +19,6 @@
                                      :db/doc "HTML-formatted string"
                                      :db/cardinality :db.cardinality/one}}))
 
-; TODO add persistent DB or store as Anki IR3 notes
 #?(:clj (defonce !conn (d/create-conn schema))) ; database on server
 #?(:clj (e/def db (e/watch !conn)))
 
@@ -48,4 +47,3 @@
 #?(:clj (defn topic [db uuid]
           (ffirst (d/q '[:find (pull ?e [*]) :in $ ?uuid
                          :where [?e :topic/uuid ?uuid]] db uuid))))
-

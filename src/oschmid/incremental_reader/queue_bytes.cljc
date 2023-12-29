@@ -62,5 +62,3 @@
                 (.put queue-bytes uuid-size (- (count queue-bytes) uuid-size))
                 (.put queue-bytes 0 uuid-size)
                 (.array)))))
-
-; TODO how to test when type hints are needed?

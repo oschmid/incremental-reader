@@ -94,11 +94,3 @@
        (Button. "Delete" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash selections]])))))
        (Button. "Extract" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash selections]])))))
        (Button. "Cloze" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call add-cloze uuid content-hash selections]]))))))))))
-; TODO add button for next cloze {{c2:: ... }}
-; TODO add create question button
-; TODO copy selected text as question, cloze, or answer
-; TODO add 'Edit/Save' button in FloatingMenu, eventually save after each change (debounce)
-; TODO add 'Split' button
-; TODO swipe word left to hide everything up to then, swipe right to extract? (Serves same purpose as bookmarks)
-; TODO if it has :topic/source - add button to 'View Original' in a new tab (highlight topic text on page like search engines do using a fragment)
-
