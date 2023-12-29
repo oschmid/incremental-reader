@@ -150,8 +150,6 @@
                     [:> EditorContent {:editor editor}]
                     [:div
                      [:button {:disabled (empty? selection)
-                               :onClick #(onEvent :delete [[0 (dec (min (.. editor -state -selection -$anchor -pos) (.. editor -state -selection -$head -pos)))]])} "Delete Before"]
-                     [:button {:disabled (empty? selection)
                                :onClick #(onEvent :delete (map range->vec (.. editor -state -selection -ranges)))} "Delete"]
                      [:button {:disabled (empty? selection)
                                :onClick #(onEvent :extract (map range->vec (.. editor -state -selection -ranges)))} "Extract"]
@@ -161,6 +159,18 @@
 
 #?(:cljs (defn topic-reader-wrapper [content onSelection onEvent]
            [:f> topic-reader content onSelection onEvent]))
+
+(e/defn Button [label disabled on-click] ; TODO pull out and reuse
+  (dom/button
+   (let [[state# v#] (e/do-event-pending [e# (e/listen> dom/node "click")]
+                                         (new on-click))
+         busy# (or (= ::e/pending state#) ; backpressure the user
+                   disabled)]
+     (dom/props {:disabled busy#, :aria-busy busy#})
+     (dom/text label)
+     (case state# ; 4 colors
+       (::e/pending ::e/failed) (throw v#)
+       (::e/init ::e/ok) v#))))
 
 (e/defn TopicReader [userID {uuid :topic/uuid content :topic/content content-hash :topic/content-hash}]
   (e/client
@@ -174,7 +184,10 @@
          :extract (e/server (e/discard (d/transact! !conn [[:db.fn/call extract-from-topic userID uuid content-hash v]])))
          :cloze (e/server (e/discard (d/transact! !conn [[:db.fn/call add-cloze uuid content-hash v]]))))
        (reset! !event nil))
-     (with-reagent topic-reader-wrapper content #(reset! !selections %) #(reset! !event [%1 %2])))))
+     (dom/div
+      (with-reagent topic-reader-wrapper content #(reset! !selections %) #(reset! !event [%1 %2]))
+      (dom/div
+       (Button. "Delete Before" (empty? selections) (e/fn [] (e/server (e/discard (d/transact! !conn [[:db.fn/call delete-from-topic uuid content-hash [[0 (dec (apply min (map last selections)))]]]]))))))))))
 ; TODO add create question button
 ;      copy selected text as question, cloze, or answer
 ; TODO add 'Split' button
